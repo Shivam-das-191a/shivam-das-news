@@ -1,0 +1,8 @@
+---
+// One inline SVG icon (PLAN 29.3). Decorative: the button or link around it carries the accessible name.
+import { ICONS } from '../lib/svg-icons';
+const { name, size = 20 } = Astro.props;
+const body = ICONS[name];
+if (!body) throw new Error(`Icon "${name}" does not exist (src/lib/svg-icons.ts)`);
+---
+<svg class="icon" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false" set:html={body}></svg>

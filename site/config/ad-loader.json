@@ -1,0 +1,23 @@
+{
+  "complianceMode": true,
+  "geoUrl": "https://news-geo.shivamdas2nd700.workers.dev/geo",
+  "adsterra": {
+    "popunder": "https://afders.org/1/df2c1f29e315fbdd2ed65c002ea27476",
+    "socialBar": "https://bicea.org/14/ffbd63be3ec1bd24efbb149a68a3a0cf",
+    "smartlink": "https://arwf.org/4/79b4ee2d77eddeba8930fba4c0739f82",
+    "nativeBanner": {
+      "script": "https://bicea.org/21/f464a5bd81ef6a936498e58dc165620d",
+      "containerId": "container-f464a5bd81ef6a936498e58dc165620d",
+      "afterParagraph": 3
+    }
+  },
+  "adsense": {
+    "slot": "",
+    "afterParagraph": 5
+  },
+  "consentDays": 180,
+  "consentText": "",
+  "consentAccept": "",
+  "consentDecline": "",
+  "consentChoices": ""
+}

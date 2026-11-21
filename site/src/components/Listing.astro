@@ -1,0 +1,28 @@
+---
+import Base from '../layouts/Base.astro';
+import PostCard from './PostCard.astro';
+import Pager from './Pager.astro';
+import Empty from './Empty.astro';
+import site from '../../config/site.json';
+import { pageSuffix } from '../lib/paginate';
+import { breadcrumb, collectionPage, profilePage } from '../lib/schema';
+import { listingHead } from '../lib/seo';
+const { kind, title, description = '', metaTitle = '', metaDescription = '', posts, page, total, base, robots, heading, links = [], photo } = Astro.props;
+const head = listingHead({ title, description, metaTitle, metaDescription, page });
+const url = base + pageSuffix(page);
+const ld = [
+  breadcrumb([{ name: 'Home', url: '/' }, { name: title, url: base }]),
+  kind === 'author'
+    ? profilePage(title, base, description, links, photo)
+    : collectionPage(title, url, description, posts.map((p: any) => ({ name: p.data.title, url: p.url }))),
+];
+---
+<Base title={head.title} description={head.description} path={url} pageType={kind} robots={robots} jsonLd={ld}>
+  <section data-pagefind-body>
+    <p class="kick">{heading}</p>
+    <h1>{title}</h1>
+    {description && <p class="meta">{description}</p>}
+  </section>
+  {posts.length ? <div class="grid" style="margin-top:20px">{posts.map((p) => <PostCard post={p} level={2} />)}</div> : <Empty />}
+  <Pager base={base} page={page} total={total} />
+</Base>

@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Site to Blogger Sync + Internal Link Fixer</title>
+  <style>
+    :root {
+      --bg:#0a0c10; --card:#141820; --border:#273042; --text:#eef1f6; --muted:#8b95a8;
+      --accent:#4f8cff; --ok:#34d399; --err:#f87171; --new:#22c55e; --upd:#f59e0b;
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--text); line-height:1.5; }
+    .wrap { max-width: 640px; margin: 0 auto; padding: 20px 14px 60px; }
+    h1 { font-size: 1.35rem; margin: 0 0 4px; }
+    h2 { font-size: 1.15rem; margin: 0 0 4px; }
+    .sub { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+    label { display:block; font-size:12px; color:var(--muted); margin-bottom:5px; }
+    input, select, button { font: inherit; width: 100%; }
+    input[type=text], input[type=password], select {
+      padding: 11px 12px; border-radius: 9px; border: 1px solid var(--border);
+      background: #0c0f15; color: var(--text); margin-bottom: 10px;
+    }
+    button {
+      background: var(--accent); color:#fff; border:0; border-radius:9px;
+      padding: 13px 14px; cursor:pointer; font-weight:600; margin-top: 6px;
+    }
+    button:disabled { opacity:.4; cursor:not-allowed; }
+    button.ok { background:#15803d; }
+    button.secondary { background:#243044; width:auto; margin-right:6px; }
+    button.big { font-size:15px; padding:16px; margin-top:10px; }
+    .hidden { display:none !important; }
+    .status { padding:10px 12px; border-radius:9px; background:#0c0f15; border:1px solid var(--border); font-size:13px; white-space:pre-wrap; margin-top:10px; color:var(--muted); }
+    .status.ok { border-color:#166534; color:var(--ok); }
+    .status.err { border-color:#7f1d1d; color:var(--err); }
+    .pills { display:flex; flex-wrap:wrap; gap:6px; margin: 0 0 14px; }
+    .pill { background:#1a2230; border:1px solid var(--border); border-radius:999px; padding:5px 11px; font-size:12px; color:var(--muted); }
+    .pill strong { color:var(--text); }
+    .pill.g strong { color:var(--new); }
+    .pill.a strong { color:var(--upd); }
+    .table-wrap { max-height:280px; overflow:auto; border:1px solid var(--border); border-radius:10px; margin-top:10px; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--border); }
+    th { color:var(--muted); font-weight:500; position:sticky; top:0; background:var(--card); }
+    .hint { font-size:12px; color:var(--muted); margin:6px 0; }
+    .progress { height:6px; background:#1a2230; border-radius:99px; overflow:hidden; margin-top:10px; }
+    .progress i { display:block; height:100%; background:var(--accent); width:0%; transition:width .25s; }
+    .dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#4b5563; margin-right:6px; }
+    .dot.on { background:var(--ok); }
+    .uri-box { background:#0c0f15; border:1px solid var(--border); border-radius:8px; padding:10px; font-size:12px; word-break:break-all; color:var(--muted); margin-top:6px; }
+    .foot { text-align:center; font-size:12px; color:var(--muted); margin-top:24px; }
+    .badge { display:inline-block; padding:2px 7px; border-radius:6px; font-size:11px; font-weight:600; }
+    .badge.new { background:#14532d; color:#86efac; }
+    .badge.upd { background:#78350f; color:#fcd34d; }
+    .badge.skip { background:#1e293b; color:#94a3b8; }
+    .badge.err { background:#7f1d1d; color:#fca5a5; }
+    .badge.clean { background:#0f766e; color:#99f6e4; }
+    .badge.fixed { background:#1e3a8a; color:#93c5fd; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Site to Blogger Sync</h1>
+  <p class="sub">Live pull from this news site (GitHub Markdown) to push to Blogger · title match · safe NEW/UPDATE · Internal Link Fixer</p>
+
+  <!-- AUTH -->
+  <div class="card" id="authCard">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <span id="ghReady" class="hint" style="margin:0"><span class="dot"></span>GitHub: not connected</span>
+      <span id="blogReady" class="hint" style="margin:0"><span class="dot"></span>Blogger: not connected</span>
+    </div>
+    <button id="ghConnectBtn" type="button" class="ok big" style="margin-top:0">Connect GitHub (one click)</button>
+    <p class="hint" style="margin-top:8px">Same sign-in as the main Admin dashboard. No need to paste a token.</p>
+    <details style="margin-top:12px">
+      <summary class="hint" style="cursor:pointer">Advanced / use PAT instead</summary>
+      <label style="margin-top:10px">GitHub Token</label>
+      <input type="password" id="ghToken" placeholder="ghp_… or github_pat_…">
+      <label>Repo</label>
+      <input type="text" id="ghRepo" value="Shivam-das-191a/shivam-das-news">
+      <label>Branch</label>
+      <input type="text" id="ghBranch" value="main">
+      <label>Content root</label>
+      <input type="text" id="contentRoot" value="site">
+      <label>Site base URL</label>
+      <input type="text" id="siteBase" value="https://shivam-das-news.pages.dev">
+      <button id="ghPatBtn" type="button" class="secondary" style="margin-top:8px">Use this PAT</button>
+    </details>
+    <div id="ghStatus" class="status hidden"></div>
+  </div>
+
+  <!-- BLOGGER -->
+  <div class="card">
+    <label>Blogger token</label>
+    <input type="text" id="bloggerToken" placeholder="ya29…">
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button id="oauthBtn" type="button" class="secondary">Connect Blogger</button>
+      <button id="clearTokenBtn" type="button" class="secondary">Clear</button>
+    </div>
+    <div id="bloggerStatus" class="status hidden"></div>
+    <p class="hint" style="margin-top:10px">Blog ID</p>
+    <input type="text" id="bloggerId" value="" placeholder="Your Blogger blog ID">
+    <p class="hint" style="margin-top:8px">Google OAuth Redirect URI (add this in Google Cloud Console)</p>
+    <div class="uri-box" id="uriBox"></div>
+  </div>
+
+  <!-- SYNC CONTROLS -->
+  <div class="card">
+    <label>Category filter (optional — leave empty for all)</label>
+    <input type="text" id="categoryFilter" placeholder="e.g. news or leave blank">
+    <label>Blogger label (auto or override)</label>
+    <input type="text" id="bloggerLabel" placeholder="Label for new posts">
+    <label>How many posts to scan</label>
+    <select id="limitSelect">
+      <option value="100">100</option>
+      <option value="250" selected>250</option>
+      <option value="500">500</option>
+      <option value="1000">1000</option>
+      <option value="2500">All</option>
+    </select>
+    <button id="syncBtn" type="button" class="ok big" disabled>Scan + Sync NEW &amp; UPDATE</button>
+    <div class="progress hidden" id="prog"><i id="progBar"></i></div>
+    <div id="runStatus" class="status">Connect GitHub + Blogger first</div>
+  </div>
+
+  <div class="card hidden" id="resultCard">
+    <div class="hint">What will be / was synced</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th style="width:70px">Status</th><th>Title</th><th style="width:80px">Body</th></tr></thead>
+        <tbody id="resultBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- INTERNAL LINK FIXER -->
+  <div class="card" id="ilCard" style="margin-top:28px;border-color:#3b4a6b">
+    <h2>Internal Link Fixer</h2>
+    <p class="sub" style="margin-bottom:10px">1-Click: load all site posts + all Blogger posts to match by title to rewrite old links <b>inside Blogger content</b> to new site URLs to skip already-clean to live update</p>
+
+    <div class="pills" id="ilPills" style="margin-bottom:12px">
+      <span class="pill">Site <strong id="ilShopN">0</strong></span>
+      <span class="pill">Blog <strong id="ilBlogN">0</strong></span>
+      <span class="pill g">Matched <strong id="ilMatchN">0</strong></span>
+      <span class="pill a">Fixed links <strong id="ilFixN">0</strong></span>
+      <span class="pill">Updated <strong id="ilUpdN">0</strong></span>
+      <span class="pill" style="background:#0f766e;color:#ecfdf5">Clean <strong id="ilCleanN">0</strong></span>
+      <span class="pill" style="background:#1e3a5f;color:#93c5fd;font-weight:700">Complete <strong id="ilPctN">0%</strong></span>
+    </div>
+
+    <button id="ilOneClickBtn" type="button" class="ok big" style="margin-top:4px;background:#1d4ed8">
+      One-Click Fix All Internal Links
+    </button>
+    <p class="hint" style="margin-top:8px">Loads lifetime posts · matches titles · rewrites links inside Blogger content · skips already-clean · live log</p>
+
+    <div class="progress hidden" id="ilProg"><i id="ilProgBar"></i></div>
+    <div id="ilStatus" class="status hidden"></div>
+
+    <div class="table-wrap hidden" id="ilResultWrap" style="margin-top:12px">
+      <div class="hint">Per-post results</div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Status</th>
+            <th>Title</th>
+            <th style="width:70px">Links</th>
+          </tr>
+        </thead>
+        <tbody id="ilResultBody"></tbody>
+      </table>
+    </div>
+
+    <div class="table-wrap hidden" id="ilLinksWrap" style="margin-top:12px;max-height:360px">
+      <div class="hint">Fixed links (old to new)</div>
+      <div id="ilLinksList" style="font-size:12px;color:var(--muted);white-space:pre-wrap;line-height:1.45"></div>
+    </div>
+  </div>
+
+  <div class="foot">Free domain ready · GitHub Markdown to Blogger · title match · internal link rewrite · no custom domain needed</div>
+</div>
+
+<script>
+(function () {
+  // ========== CONFIG ==========
+  // Use the Google OAuth Client ID the user provided for Blogger
+  const GOOGLE_CLIENT_ID = "6322804696-ki52881fgoaj1edbccetm9ck7h3kc36d.apps.googleusercontent.com";
+  const BLOGGER_SCOPE = "https://www.googleapis.com/auth/blogger";
+  const SS_BLOG = "sdn_blogger_token_v1";
+  const SS_GH = "sdn_gh_token_v1";
+
+  const $ = (id) => document.getElementById(id);
+  const state = {
+    ghToken: null,
+    ghRepo: null,
+    ghBranch: "main",
+    contentRoot: "site",
+    siteBase: "https://shivam-das-news.pages.dev",
+    sitePosts: [],
+    bloggerToken: null,
+    createdTitles: new Set()
+  };
+
+  // ========== HELPERS ==========
+  function show(el, msg, kind) {
+    if (!el) return;
+    el.textContent = msg;
+    el.className = "status" + (kind ? " " + kind : "");
+    el.classList.remove("hidden");
+  }
+  function setProg(pct) {
+    const p = $("prog"), b = $("progBar");
+    if (!p || !b) return;
+    if (pct == null) { p.classList.add("hidden"); return; }
+    p.classList.remove("hidden");
+    b.style.width = Math.min(100, Math.max(0, pct)) + "%";
+  }
+  function escapeHtml(s) {
+    return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+  function normTitle(t) {
+    return String(t || "").toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim();
+  }
+  function titleKey(t) { return normTitle(t); }
+
+  function dateParts(d, tz) {
+    try {
+      const f = new Intl.DateTimeFormat("en-CA", { timeZone: tz || "UTC", year: "numeric", month: "2-digit", day: "2-digit" });
+      const p = Object.fromEntries(f.formatToParts(d).map(x => [x.type, x.value]));
+      return { y: p.year, m: p.month, d: p.day };
+    } catch {
+      const x = new Date(d);
+      return { y: x.getUTCFullYear(), m: String(x.getUTCMonth()+1).padStart(2,"0"), d: String(x.getUTCDate()).padStart(2,"0") };
+    }
+  }
+  function postUrl(category, slug, date, base, tz) {
+    const { y, m, d } = dateParts(new Date(date), tz || "UTC");
+    return (base || "").replace(/\/$/, "") + `/${y}/${m}/${d}/blogs/${category}/${slug}/`;
+  }
+
+  // Simple front-matter parser
+  function parseFrontMatter(raw) {
+    const m = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
+    if (!m) return { data: {}, body: raw };
+    const data = {};
+    m[1].split(/\r?\n/).forEach(line => {
+      const i = line.indexOf(":");
+      if (i < 1) return;
+      const k = line.slice(0, i).trim();
+      let v = line.slice(i + 1).trim();
+      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1);
+      if (v === "true") v = true; else if (v === "false") v = false;
+      else if (/^\d{4}-\d{2}-\d{2}/.test(v)) { /* keep as string */ }
+      else if (v.startsWith("[") && v.endsWith("]")) {
+        try { v = JSON.parse(v.replace(/'/g, '"')); } catch { v = v.slice(1,-1).split(",").map(s => s.trim().replace(/^["']|["']$/g, "")); }
+      }
+      data[k] = v;
+    });
+    return { data, body: m[2].trim() };
+  }
+
+  // Markdown to rough HTML for Blogger (keep simple)
+  function mdToHtml(md) {
+    if (!md) return "";
+    let h = md
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/^### (.*$)/gim, "<h3>$1</h3>")
+      .replace(/^## (.*$)/gim, "<h2>$1</h2>")
+      .replace(/^# (.*$)/gim, "<h1>$1</h1>")
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.*?)\*/g, "<em>$1</em>")
+      .replace(/!\[(.*?)\]\((.*?)\)/g, '<img alt="$1" src="$2" style="max-width:100%">')
+      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
+      .replace(/^\s*[-*] (.*)$/gim, "<li>$1</li>")
+      .replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>")
+      .replace(/\n\n/g, "</p><p>")
+      .replace(/\n/g, "<br>");
+    return "<p>" + h + "</p>";
+  }
+
+  // ========== GITHUB ==========
+  async function ghFetch(path, opts = {}) {
+    const res = await fetch("https://api.github.com" + path, {
+      ...opts,
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: "Bearer " + state.ghToken,
+        "X-GitHub-Api-Version": "2022-11-28",
+        ...(opts.body ? { "Content-Type": "application/json" } : {}),
+        ...(opts.headers || {})
+      }
+    });
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      throw new Error("GitHub HTTP " + res.status + ": " + t.slice(0, 160));
+    }
+    return res;
+  }
+
+  async function loadAllSitePosts(limit, onProgress) {
+    const root = (state.contentRoot || "site").replace(/\/$/, "");
+    const path = root + "/content/blogs";
+    // Get recursive tree
+    const treeRes = await ghFetch(`/repos/${state.ghRepo}/git/trees/${state.ghBranch}?recursive=1`);
+    const tree = await treeRes.json();
+    const files = (tree.tree || []).filter(t =>
+      t.type === "blob" &&
+      t.path.startsWith(path + "/") &&
+      t.path.endsWith(".md")
+    );
+    const posts = [];
+    const max = Math.min(files.length, limit || 2500);
+    for (let i = 0; i < max; i++) {
+      const f = files[i];
+      onProgress && onProgress(i + 1, max);
+      try {
+        const fileRes = await ghFetch(`/repos/${state.ghRepo}/contents/${encodeURIComponent(f.path)}?ref=${state.ghBranch}`);
+        const file = await fileRes.json();
+        const raw = new TextDecoder().decode(Uint8Array.from(atob(file.content.replace(/\s/g, "")), c => c.charCodeAt(0)));
+        const { data, body } = parseFrontMatter(raw);
+        if (!data.title) continue;
+        if (data.status && data.status !== "published" && data.status !== "scheduled") continue;
+        const cat = data.category || "news";
+        const slug = data.permalink || data.slug || f.path.split("/").pop().replace(/\.md$/, "");
+        const date = data.date || new Date().toISOString();
+        const url = postUrl(cat, slug, date, state.siteBase, "UTC");
+        posts.push({
+          title: data.title,
+          body_html: mdToHtml(body),
+          body_md: body,
+          published: data.date || "",
+          updated: data.updated || data.date || "",
+          category: cat,
+          slug,
+          url,
+          path: f.path,
+          labels: data.tags || []
+        });
+      } catch (e) {
+        console.warn("Skip file", f.path, e.message);
+      }
+    }
+    // Dedupe by normalized title — keep newest updated
+    const byTitle = new Map();
+    for (const p of posts) {
+      const k = titleKey(p.title);
+      if (!k) continue;
+      const prev = byTitle.get(k);
+      if (!prev || String(p.updated || p.published) > String(prev.updated || prev.published)) {
+        byTitle.set(k, p);
+      }
+    }
+    return Array.from(byTitle.values());
+  }
+
+  // ========== BLOGGER ==========
+  async function bloggerFetch(path, token, retries) {
+    if (retries == null) retries = 3;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      const res = await fetch("https://www.googleapis.com/blogger/v3" + path, {
+        headers: { Authorization: "Bearer " + token }
+      });
+      if (res.status === 429 && attempt < retries) {
+        await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+        continue;
+      }
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error("Blogger HTTP " + res.status + ": " + t.slice(0, 140));
+      }
+      return res.json();
+    }
+  }
+
+  async function fetchAllBlogger(token, blogId, onProgress) {
+    const items = [];
+    let pageToken = null, page = 0;
+    do {
+      page++;
+      const q = new URLSearchParams({
+        maxResults: "500",
+        fetchBodies: "true",
+        fields: "nextPageToken,items(id,title,published,updated,labels,content,url)"
+      });
+      if (pageToken) q.set("pageToken", pageToken);
+      const data = await bloggerFetch("/blogs/" + blogId + "/posts?" + q.toString(), token);
+      const batch = data.items || [];
+      for (const p of batch) {
+        items.push({
+          id: p.id,
+          title: p.title || "",
+          published: p.published || "",
+          updated: p.updated || "",
+          labels: p.labels || [],
+          content: p.content || "",
+          url: p.url || ""
+        });
+      }
+      onProgress && onProgress(items.length, page);
+      pageToken = data.nextPageToken || null;
+    } while (pageToken);
+    return items;
+  }
+
+  async function apiCreate(token, blogId, p, label) {
+    const key = titleKey(p.title);
+    if (key && state.createdTitles.has(key)) {
+      throw Object.assign(new Error("SKIP_DUP_IN_RUN"), { code: "SKIP" });
+    }
+    const body = {
+      kind: "blogger#post",
+      title: p.title,
+      content: p.body_html || "",
+      labels: label ? [label] : (p.labels || [])
+    };
+    if (p.published) body.published = p.published;
+    const res = await fetch("https://www.googleapis.com/blogger/v3/blogs/" + blogId + "/posts/", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    if (res.status === 429) throw Object.assign(new Error("RATE_LIMIT"), { code: 429 });
+    if (!res.ok) throw new Error("Create " + res.status + ": " + (await res.text().catch(() => "")).slice(0, 120));
+    const data = await res.json();
+    if (key) state.createdTitles.add(key);
+    return data;
+  }
+
+  async function apiUpdate(token, blogId, p, existingId, label) {
+    const body = {
+      kind: "blogger#post",
+      id: existingId,
+      title: p.title,
+      content: p.body_html || "",
+      labels: label ? [label] : (p.labels || [])
+    };
+    if (p.published) body.published = p.published;
+    const res = await fetch("https://www.googleapis.com/blogger/v3/blogs/" + blogId + "/posts/" + existingId + "/", {
+      method: "PUT",
+      headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    if (res.status === 429) throw Object.assign(new Error("RATE_LIMIT"), { code: 429 });
+    if (!res.ok) throw new Error("Update " + res.status + ": " + (await res.text().catch(() => "")).slice(0, 120));
+    return res.json();
+  }
+
+  // ========== CLASSIFY ==========
+  function classify(sitePosts, bloggerItems) {
+    const byExact = new Map();
+    const bySoft = new Map();
+    for (const b of bloggerItems) {
+      const k = titleKey(b.title);
+      if (!k) continue;
+      if (!byExact.has(k)) byExact.set(k, b);
+      const soft = k.replace(/\s+/g, "");
+      if (!bySoft.has(soft)) bySoft.set(soft, b);
+    }
+    const rows = [];
+    for (const p of sitePosts) {
+      const k = titleKey(p.title);
+      let match = byExact.get(k) || bySoft.get(k.replace(/\s+/g, ""));
+      if (match) {
+        rows.push({ status: "UPDATE", post: p, blogger: match });
+      } else {
+        rows.push({ status: "NEW", post: p, blogger: null });
+      }
+    }
+    return rows;
+  }
+
+  // ========== SYNC RUN ==========
+  async function runSync() {
+    const token = state.bloggerToken || $("bloggerToken").value.trim();
+    const blogId = $("bloggerId").value.trim();
+    if (!state.ghToken) { show($("runStatus"), "Connect GitHub first", "err"); return; }
+    if (!token || !blogId) { show($("runStatus"), "Connect Blogger + enter Blog ID", "err"); return; }
+    state.bloggerToken = token;
+    state.createdTitles = new Set();
+
+    const limit = parseInt($("limitSelect").value, 10) || 250;
+    const catFilter = ($("categoryFilter").value || "").trim().toLowerCase();
+    const label = ($("bloggerLabel").value || "").trim();
+
+    $("syncBtn").disabled = true;
+    setProg(5);
+    show($("runStatus"), "1/4 Loading site posts from GitHub…");
+
+    try {
+      let sitePosts = await loadAllSitePosts(limit, (n, max) => {
+        setProg(5 + Math.round((n / max) * 25));
+        show($("runStatus"), `1/4 Loading site posts… ${n}/${max}`);
+      });
+      if (catFilter) sitePosts = sitePosts.filter(p => (p.category || "").toLowerCase() === catFilter);
+      state.sitePosts = sitePosts;
+
+      setProg(35);
+      show($("runStatus"), `2/4 Loading Blogger posts… (site: ${sitePosts.length})`);
+      const bloggerItems = await fetchAllBlogger(token, blogId, (n) => {
+        show($("runStatus"), `2/4 Loading Blogger… ${n}`);
+      });
+
+      setProg(55);
+      const rows = classify(sitePosts, bloggerItems);
+      const toNew = rows.filter(r => r.status === "NEW");
+      const toUpd = rows.filter(r => r.status === "UPDATE");
+
+      // Render preview
+      const tbody = $("resultBody");
+      tbody.innerHTML = "";
+      rows.slice(0, 200).forEach(r => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td><span class="badge ${r.status === "NEW" ? "new" : "upd"}">${r.status}</span></td>
+          <td>${escapeHtml(r.post.title).slice(0, 80)}</td>
+          <td>${(r.post.body_html || "").length > 40 ? "yes" : "—"}</td>`;
+        tbody.appendChild(tr);
+      });
+      $("resultCard").classList.remove("hidden");
+
+      show($("runStatus"), `3/4 Syncing… NEW ${toNew.length} · UPDATE ${toUpd.length}`);
+      let created = 0, updated = 0, errors = 0, skipped = 0;
+      const total = toNew.length + toUpd.length || 1;
+      let done = 0;
+
+      for (const r of toNew) {
+        try {
+          await apiCreate(token, blogId, r.post, label || (r.post.category || ""));
+          created++;
+        } catch (e) {
+          if (e.code === "SKIP") skipped++;
+          else if (e.code === 429) { show($("runStatus"), "Rate limited — wait and retry", "err"); break; }
+          else { errors++; console.warn(e); }
+        }
+        done++;
+        setProg(55 + Math.round((done / total) * 40));
+        await new Promise(r => setTimeout(r, 400));
+      }
+      for (const r of toUpd) {
+        try {
+          await apiUpdate(token, blogId, r.post, r.blogger.id, label || (r.post.category || ""));
+          updated++;
+        } catch (e) {
+          if (e.code === 429) { show($("runStatus"), "Rate limited — wait and retry", "err"); break; }
+          else { errors++; console.warn(e); }
+        }
+        done++;
+        setProg(55 + Math.round((done / total) * 40));
+        await new Promise(r => setTimeout(r, 400));
+      }
+
+      setProg(100);
+      show($("runStatus"),
+        `Done\nNEW created: ${created}\nUpdated: ${updated}\nSkipped: ${skipped}\nErrors: ${errors}\nSite posts scanned: ${sitePosts.length}`,
+        errors ? "err" : "ok"
+      );
+    } catch (e) {
+      show($("runStatus"), "Failed: " + (e.message || e), "err");
+    }
+    setTimeout(() => setProg(null), 800);
+    $("syncBtn").disabled = false;
+  }
+
+  // ========== INTERNAL LINK FIXER ==========
+  const ilState = { shopPosts: [], bloggerPosts: [], results: [], busy: false };
+
+  function setIlProg(pct) {
+    const p = $("ilProg"), b = $("ilProgBar");
+    if (!p || !b) return;
+    if (pct == null) { p.classList.add("hidden"); return; }
+    p.classList.remove("hidden");
+    b.style.width = Math.min(100, Math.max(0, pct)) + "%";
+  }
+  function setIlCounts(o) {
+    if ($("ilShopN")) $("ilShopN").textContent = o.shop != null ? o.shop : (ilState.shopPosts.length || 0);
+    if ($("ilBlogN")) $("ilBlogN").textContent = o.blog != null ? o.blog : (ilState.bloggerPosts.length || 0);
+    if ($("ilMatchN")) $("ilMatchN").textContent = o.matched != null ? o.matched : 0;
+    if ($("ilFixN")) $("ilFixN").textContent = o.fixed != null ? o.fixed : 0;
+    if ($("ilUpdN")) $("ilUpdN").textContent = o.updated != null ? o.updated : 0;
+    if ($("ilCleanN")) $("ilCleanN").textContent = o.clean != null ? o.clean : 0;
+    if ($("ilPctN") && o.matched) $("ilPctN").textContent = Math.round((o.clean / o.matched) * 100) + "%";
+  }
+  function setIlBusy(on) {
+    ilState.busy = !!on;
+    if ($("ilOneClickBtn")) $("ilOneClickBtn").disabled = !!on;
+  }
+
+  function extractLinksFromHtml(html) {
+    const links = [];
+    const re = /<a\s+[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+    let m;
+    while ((m = re.exec(html))) {
+      links.push({ href: m[1], text: m[2].replace(/<[^>]+>/g, "").trim(), full: m[0] });
+    }
+    return links;
+  }
+
+  function buildMatchMaps(sitePosts, bloggerPosts) {
+    const byExact = new Map();
+    const bySoft = new Map();
+    const bySlug = new Map();
+    for (const p of sitePosts) {
+      const k = titleKey(p.title);
+      if (k) {
+        byExact.set(k, p);
+        bySoft.set(k.replace(/\s+/g, ""), p);
+      }
+      if (p.slug) bySlug.set(p.slug.toLowerCase(), p);
+    }
+    return { byExact, bySoft, bySlug, sitePosts };
+  }
+
+  function resolveTarget(href, anchorText, maps) {
+    // Already points to our free domain?
+    if (href.indexOf("shivam-das-news.pages.dev") !== -1) return null;
+    // Try title match from anchor text
+    const k = titleKey(anchorText);
+    let hit = maps.byExact.get(k) || maps.bySoft.get(k.replace(/\s+/g, ""));
+    if (hit) return hit.url;
+    // Try slug from path
+    const parts = href.replace(/\/$/, "").split("/");
+    const last = (parts[parts.length - 1] || "").replace(/\.html?$/i, "");
+    if (last && maps.bySlug.has(last.toLowerCase())) return maps.bySlug.get(last.toLowerCase()).url;
+    return null;
+  }
+
+  function rewriteHtmlLinks(html, maps) {
+    let fixed = 0;
+    const changes = [];
+    const newHtml = html.replace(/<a\s+([^>]*?)href=["']([^"']+)["']([^>]*)>([\s\S]*?)<\/a>/gi, (full, pre, href, post, text) => {
+      const plain = text.replace(/<[^>]+>/g, "").trim();
+      const target = resolveTarget(href, plain, maps);
+      if (target && target !== href) {
+        fixed++;
+        changes.push({ old: href, neu: target, text: plain.slice(0, 40) });
+        return `<a ${pre}href="${target}"${post}>${text}</a>`;
+      }
+      return full;
+    });
+    return { html: newHtml, fixed, changes };
+  }
+
+  async function updateBloggerPost(postId, newContent, token, blogId) {
+    // Need full post first to preserve other fields
+    const existing = await bloggerFetch("/blogs/" + blogId + "/posts/" + postId + "?fetchBodies=true", token);
+    const body = {
+      kind: "blogger#post",
+      id: postId,
+      title: existing.title,
+      content: newContent,
+      labels: existing.labels || []
+    };
+    const res = await fetch("https://www.googleapis.com/blogger/v3/blogs/" + blogId + "/posts/" + postId + "/", {
+      method: "PUT",
+      headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error("Update failed " + res.status);
+    return res.json();
+  }
+
+  function renderIlTable(rows) {
+    const tbody = $("ilResultBody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    rows.forEach(r => {
+      const tr = document.createElement("tr");
+      let badge = "skip";
+      if (r.status === "FIXED") badge = "fixed";
+      else if (r.status === "CLEAN") badge = "clean";
+      else if (r.status === "ERR") badge = "err";
+      tr.innerHTML = `<td><span class="badge ${badge}">${r.status}</span></td>
+        <td>${escapeHtml(r.title).slice(0, 70)}</td>
+        <td>${r.links || 0}</td>`;
+      tbody.appendChild(tr);
+    });
+    $("ilResultWrap").classList.remove("hidden");
+  }
+
+  async function ilOneClickFix() {
+    if (ilState.busy) return;
+    const token = state.bloggerToken || $("bloggerToken").value.trim();
+    const blogId = $("bloggerId").value.trim();
+    if (!state.ghToken) { show($("ilStatus"), "Connect GitHub first", "err"); return; }
+    if (!token || !blogId) { show($("ilStatus"), "Connect Blogger token + Blog ID first", "err"); return; }
+    state.bloggerToken = token;
+
+    setIlBusy(true);
+    setIlProg(5);
+    show($("ilStatus"), "1/4 Loading site posts from GitHub…");
+
+    try {
+      const limit = parseInt($("limitSelect").value, 10) || 2500;
+      ilState.shopPosts = await loadAllSitePosts(limit, (n, max) => {
+        setIlProg(5 + Math.round((n / max) * 25));
+        setIlCounts({ shop: n });
+      });
+      setIlCounts({ shop: ilState.shopPosts.length });
+
+      show($("ilStatus"), "2/4 Loading ALL Blogger posts… | Site: " + ilState.shopPosts.length);
+      ilState.bloggerPosts = await fetchAllBlogger(token, blogId, (n) => {
+        setIlCounts({ shop: ilState.shopPosts.length, blog: n });
+      });
+      setIlCounts({ shop: ilState.shopPosts.length, blog: ilState.bloggerPosts.length });
+
+      show($("ilStatus"), "3/4 Matching + rewriting links inside Blogger…");
+      const maps = buildMatchMaps(ilState.shopPosts, ilState.bloggerPosts);
+      const rows = [];
+      let matched = 0, totalFixed = 0, updated = 0, clean = 0, skipped = 0, noChange = 0, errors = 0;
+      const allChanges = [];
+      const total = Math.max(1, ilState.bloggerPosts.length);
+
+      for (let i = 0; i < ilState.bloggerPosts.length; i++) {
+        const bp = ilState.bloggerPosts[i];
+        const k = titleKey(bp.title);
+        const siteHit = maps.byExact.get(k) || maps.bySoft.get(k.replace(/\s+/g, ""));
+        if (!siteHit) {
+          skipped++;
+          rows.push({ status: "SKIP", title: bp.title, links: 0 });
+          continue;
+        }
+        matched++;
+        const content = bp.content || "";
+        const { html: newHtml, fixed, changes } = rewriteHtmlLinks(content, maps);
+        if (fixed === 0) {
+          clean++;
+          noChange++;
+          rows.push({ status: "CLEAN", title: bp.title, links: 0 });
+        } else if (newHtml === content) {
+          clean++;
+          noChange++;
+          rows.push({ status: "CLEAN", title: bp.title, links: 0 });
+        } else {
+          try {
+            await updateBloggerPost(bp.id, newHtml, token, blogId);
+            updated++;
+            totalFixed += fixed;
+            changes.forEach(c => allChanges.push(c));
+            rows.push({ status: "FIXED", title: bp.title, links: fixed });
+          } catch (e) {
+            errors++;
+            rows.push({ status: "ERR", title: bp.title, links: fixed });
+            console.warn(e);
+          }
+          await new Promise(r => setTimeout(r, 350));
+        }
+        setIlProg(30 + Math.round(((i + 1) / total) * 65));
+        setIlCounts({ shop: ilState.shopPosts.length, blog: ilState.bloggerPosts.length, matched, fixed: totalFixed, updated, clean });
+        if (fixed > 0) {
+          renderIlTable(rows);
+          show($("ilStatus"), `3/4 Fixing… ${Math.round((clean / matched) * 100) || 0}% · Updated ${updated} · Links ${totalFixed}`);
+        }
+      }
+
+      setIlProg(100);
+      renderIlTable(rows);
+      if (allChanges.length) {
+        $("ilLinksList").textContent = allChanges.slice(0, 80).map(c => `${c.old}\n  to ${c.neu}  (${c.text})`).join("\n\n");
+        $("ilLinksWrap").classList.remove("hidden");
+      }
+      const finalPct = matched > 0 ? Math.round((clean / matched) * 100) : 0;
+      setIlCounts({ shop: ilState.shopPosts.length, blog: ilState.bloggerPosts.length, matched, fixed: totalFixed, updated, clean });
+      show($("ilStatus"),
+        `LIVE finished (Blogger-body rewrite)\n` +
+        `Complete: ${finalPct}%  (${clean} clean / ${matched} matched)\n` +
+        `Links rewritten: ${totalFixed}\n` +
+        `Blogger posts updated: ${updated}\n` +
+        `No site twin: ${skipped}\n` +
+        `Already clean: ${noChange}\n` +
+        (errors ? `Errors: ${errors}` : "Errors: 0") +
+        (finalPct >= 100 ? "\n\n100% complete — all matched posts are clean" : `\n\nRemaining dirty: ${matched - clean}`),
+        errors ? "err" : (finalPct >= 100 ? "ok" : null)
+      );
+    } catch (e) {
+      setIlProg(null);
+      let help = String(e.message || e);
+      if (/Failed to fetch|token/i.test(help)) {
+        help = "Failed — usually Blogger token expired or network.\n1) Click Connect Blogger again\n2) Confirm Blog ID\n3) Retry";
+      }
+      show($("ilStatus"), "Failed: " + help, "err");
+    }
+    setTimeout(() => setIlProg(null), 900);
+    setIlBusy(false);
+  }
+
+  // ========== OAUTH + INIT ==========
+  const AUTH_WORKER = "https://news-admin-auth.shivamdas2nd700.workers.dev";
+  const DEFAULT_REPO = "Shivam-das-191a/shivam-das-news";
+
+  function setGhReady(on, label) {
+    const el = $("ghReady");
+    if (!el) return;
+    el.innerHTML = '<span class="dot' + (on ? ' on' : '') + '"></span>GitHub: ' + (label || (on ? 'connected' : 'not connected'));
+  }
+  function setBlogReady(on, label) {
+    const el = $("blogReady");
+    if (!el) return;
+    el.innerHTML = '<span class="dot' + (on ? ' on' : '') + '"></span>Blogger: ' + (label || (on ? 'token ready' : 'not connected'));
+  }
+
+  function updateSyncEnabled() {
+    const ok = !!(state.ghToken && (state.bloggerToken || ($("bloggerToken") && $("bloggerToken").value.trim())) && $("bloggerId") && $("bloggerId").value.trim());
+    if ($("syncBtn")) $("syncBtn").disabled = !ok;
+  }
+
+  function applyGhToken(token, source) {
+    state.ghToken = token;
+    state.ghRepo = ($("ghRepo") && $("ghRepo").value.trim()) || DEFAULT_REPO;
+    state.ghBranch = ($("ghBranch") && $("ghBranch").value.trim()) || "main";
+    state.contentRoot = ($("contentRoot") && $("contentRoot").value.trim()) || "site";
+    state.siteBase = (($("siteBase") && $("siteBase").value.trim()) || "https://shivam-das-news.pages.dev").replace(/\/$/, "");
+    try { sessionStorage.setItem(SS_GH, token); } catch (e) {}
+    setGhReady(true, source || "connected");
+    show($("ghStatus"), "GitHub connected (" + (source || "ok") + ")", "ok");
+    updateSyncEnabled();
+    // Quick verify
+    ghFetch("/user").then(r => r.json()).then(u => {
+      setGhReady(true, u.login || "connected");
+    }).catch(() => {});
+  }
+
+  // One-click GitHub OAuth (same worker as Admin dashboard)
+  $("ghConnectBtn").onclick = function () {
+    show($("ghStatus"), "Opening GitHub sign-in…", null);
+    const origin = AUTH_WORKER;
+    const win = window.open(origin + "/auth", "sdn-blog-xml-auth", "width=560,height=720");
+    const onMsg = function (e) {
+      if (e.origin !== origin || !e.data || e.data.type !== "shivam-admin-auth") return;
+      window.removeEventListener("message", onMsg);
+      if (win) try { win.close(); } catch (err) {}
+      if (e.data.token) {
+        applyGhToken(e.data.token, e.data.login || "OAuth");
+      } else {
+        show($("ghStatus"), "Sign-in cancelled or failed", "err");
+      }
+    };
+    window.addEventListener("message", onMsg);
+    // Safety timeout
+    setTimeout(function () {
+      window.removeEventListener("message", onMsg);
+    }, 120000);
+  };
+
+  // Optional PAT fallback
+  if ($("ghPatBtn")) {
+    $("ghPatBtn").onclick = async function () {
+      const token = $("ghToken").value.trim();
+      const repo = $("ghRepo").value.trim();
+      if (!token || !repo) { show($("ghStatus"), "Token + repo required", "err"); return; }
+      state.ghRepo = repo;
+      try {
+        const r = await fetch("https://api.github.com/repos/" + repo, {
+          headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json" }
+        });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const data = await r.json();
+        applyGhToken(token, data.full_name);
+      } catch (e) {
+        show($("ghStatus"), "GitHub failed: " + e.message, "err");
+        state.ghToken = null;
+        setGhReady(false);
+      }
+    };
+  }
+
+  // Blogger OAuth (popup + hash capture)
+  $("oauthBtn").onclick = function () {
+    const redirectUri = location.origin + location.pathname;
+    if ($("uriBox")) $("uriBox").textContent = redirectUri;
+    const u = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    u.searchParams.set("client_id", GOOGLE_CLIENT_ID);
+    u.searchParams.set("redirect_uri", redirectUri);
+    u.searchParams.set("response_type", "token");
+    u.searchParams.set("scope", BLOGGER_SCOPE);
+    u.searchParams.set("include_granted_scopes", "true");
+    u.searchParams.set("prompt", "consent");
+    window.open(u.toString(), "blogger_oauth", "width=520,height=640");
+  };
+
+  function captureTokenFromHash() {
+    const hash = location.hash.replace(/^#/, "");
+    if (!hash) return false;
+    const params = new URLSearchParams(hash);
+    const access = params.get("access_token");
+    if (access) {
+      $("bloggerToken").value = access;
+      state.bloggerToken = access;
+      try { sessionStorage.setItem(SS_BLOG, access); } catch (e) {}
+      history.replaceState(null, "", location.pathname + location.search);
+      setBlogReady(true, "token ready");
+      show($("bloggerStatus"), "Blogger token received", "ok");
+      updateSyncEnabled();
+      return true;
+    }
+    return false;
+  }
+
+  $("clearTokenBtn").onclick = function () {
+    $("bloggerToken").value = "";
+    state.bloggerToken = null;
+    try { sessionStorage.removeItem(SS_BLOG); } catch (e) {}
+    setBlogReady(false);
+    show($("bloggerStatus"), "Token cleared", null);
+    updateSyncEnabled();
+  };
+
+  $("bloggerToken").addEventListener("input", function () {
+    state.bloggerToken = $("bloggerToken").value.trim();
+    try { if (state.bloggerToken) sessionStorage.setItem(SS_BLOG, state.bloggerToken); } catch (e) {}
+    setBlogReady(!!state.bloggerToken, state.bloggerToken ? "token ready" : null);
+    updateSyncEnabled();
+  });
+  if ($("bloggerId")) $("bloggerId").addEventListener("input", updateSyncEnabled);
+
+  $("syncBtn").onclick = function () { runSync(); };
+  if ($("ilOneClickBtn")) $("ilOneClickBtn").onclick = function () { ilOneClickFix(); };
+
+  // Init on load
+  if ($("uriBox")) $("uriBox").textContent = location.origin + location.pathname;
+  try {
+    const t = sessionStorage.getItem(SS_BLOG);
+    if (t) {
+      $("bloggerToken").value = t;
+      state.bloggerToken = t;
+      setBlogReady(true, "token ready");
+    }
+    const g = sessionStorage.getItem(SS_GH);
+    if (g) {
+      // Silent restore
+      state.ghToken = g;
+      state.ghRepo = DEFAULT_REPO;
+      state.ghBranch = "main";
+      state.contentRoot = "site";
+      state.siteBase = "https://shivam-das-news.pages.dev";
+      if ($("ghToken")) $("ghToken").value = g;
+      setGhReady(true, "restored");
+      // Verify still valid
+      fetch("https://api.github.com/user", {
+        headers: { Authorization: "Bearer " + g, Accept: "application/vnd.github+json" }
+      }).then(r => {
+        if (!r.ok) throw new Error("expired");
+        return r.json();
+      }).then(u => {
+        setGhReady(true, u.login || "connected");
+        updateSyncEnabled();
+      }).catch(() => {
+        state.ghToken = null;
+        try { sessionStorage.removeItem(SS_GH); } catch (e) {}
+        setGhReady(false);
+      });
+    }
+  } catch (e) {}
+  captureTokenFromHash();
+  updateSyncEnabled();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+---
+import Base from '../layouts/Base.astro';
+import PostCard from '../components/PostCard.astro';
+import Empty from '../components/Empty.astro';
+import Trending from '../components/Trending.astro';
+import site from '../../config/site.json';
+import { getPosts, getMenuCategories, groupBy } from '../lib/posts';
+import { catName } from '../lib/categories';
+import { categoryUrl } from '../lib/url';
+import { fmtDate } from '../lib/posts';
+import { webSite, organizationDoc } from '../lib/schema';
+import { homeHead } from '../lib/seo';
+import { altOf, setOf } from '../lib/picture';
+import { SIZES } from '../lib/picture-set';
+
+const posts = await getPosts();
+const active = await getMenuCategories();
+const [lead, ...rest] = posts;
+const latest = rest.slice(0, 9);
+const byCat = groupBy(posts, (p) => p.data.category);
+const ld = [webSite(site), organizationDoc(site)];
+const head = homeHead(site as any);
+const leadSet = lead ? setOf(lead.data.image, SIZES.lead) : null;
+---
+<Base title={site.siteName} fullTitle={head.fullTitle} description={head.description} path="/" pageType="home" jsonLd={ld}>
+  <h1 class="sr">{site.siteName}</h1>
+  {!lead ? <Empty /> : (
+    <>
+      <a class="card lead post" href={lead.url}>
+        {lead.data.image && <img class="thumb" src={lead.data.image} alt={altOf(lead.data.image, lead.data.imageAlt)} srcset={leadSet?.srcset} sizes={leadSet?.sizes} width="1200" height="675" fetchpriority="high">}
+        <div>
+          <span class="kick">{catName(lead.data.category)}</span>
+          <h2>{lead.data.title}</h2>
+          <p class="meta">{fmtDate(lead.data.date)}</p>
+        </div>
+      </a>
+      {latest.length > 0 && (<>
+        <h2 class="sec">Latest news</h2>
+        <div class="grid">{latest.map((p) => <PostCard post={p} />)}</div>
+      </>)}
+      <Trending />
+      {active.map((c) => (
+        <>
+          <h2 class="sec"><a href={categoryUrl(c.slug)}>{c.name}</a></h2>
+          <div class="grid">{(byCat.get(c.slug) ?? []).slice(0, 4).map((p) => <PostCard post={p} />)}</div>
+        </>
+      ))}
+    </>
+  )}
+</Base>

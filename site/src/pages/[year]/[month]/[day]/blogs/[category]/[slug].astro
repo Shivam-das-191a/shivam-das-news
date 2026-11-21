@@ -1,0 +1,93 @@
+---
+import { getEntry, render } from 'astro:content';
+import Base from '../../../../../../layouts/Base.astro';
+import { getPosts, getTags, fmtDate } from '../../../../../../lib/posts';
+import { planLinks } from '../../../../../../lib/linking';
+import { findOrphans } from '../../../../../../lib/orphans';
+import manualLinks from '../../../../../../../config/links.json';
+import Related from '../../../../../../components/Related.astro';
+import ReadNext from '../../../../../../components/ReadNext.astro';
+import AdLoader from '../../../../../../components/AdLoader.astro';
+import Beacon from '../../../../../../components/Beacon.astro';
+import Trending from '../../../../../../components/Trending.astro';
+import { catName } from '../../../../../../lib/categories';
+import { categoryUrl, authorUrl, tagUrl } from '../../../../../../lib/url';
+import { slugify } from '../../../../../../lib/slug';
+import { readTime, wordCount } from '../../../../../../lib/readtime';
+import { article as articleLd, breadcrumb } from '../../../../../../lib/schema';
+import site from '../../../../../../../config/site.json';
+import places from '../../../../../../../config/locations.json';
+import { detectLocations } from '../../../../../../lib/geo-schema';
+import PushPrompt from '../../../../../../components/PushPrompt.astro';
+import AlertsLink from '../../../../../../components/AlertsLink.astro';
+import { altOf, captionOf, setOf, bodySets } from '../../../../../../lib/picture';
+import { SIZES } from '../../../../../../lib/picture-set';
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  const tags = (await getTags()).filter((t) => t.posts.length >= site.thinTagMinPosts).map((t) => ({ name: t.name, url: tagUrl(t.slug) }));
+  const categories = [...new Set(posts.map((p) => p.data.category))].map((c) => ({ name: catName(c), url: categoryUrl(c) }));
+  const ctx = { tags, categories, manual: manualLinks as { keyword: string; url: string }[], now: new Date() };
+  const plans = posts.map((p) => planLinks(p as any, posts as any[], ctx));
+  // v0.9.0: orphan report. A warning only; the build is not stopped.
+  for (const u of findOrphans(new Map(posts.map((p, i) => [p.url, plans[i].out] as [string, string[]]))))
+    console.warn(`[orphan] ${u} gets no link from any other article (add tags or a focus keyword, or link to it from a related story)`);
+  return posts.map((p, i) => ({
+    params: { year: p.parts.y, month: p.parts.m, day: p.parts.d, category: p.data.category, slug: p.data.permalink },
+    props: { post: p, plan: plans[i] },
+  }));
+}
+const { post, plan } = Astro.props;
+const d = post.data;
+const { Content } = await render(post);
+const bodyHtml = plan.html ? bodySets(plan.html) : plan.html;
+const related = plan.related;
+const author = await getEntry('authors', d.author);
+const authorName = author?.data.name ?? d.author;
+const cat = catName(d.category);
+const imgAlt = altOf(d.image, d.imageAlt);
+const imgSet = setOf(d.image, SIZES.article);
+const { caption: imgCaption, credit: imgCredit } = captionOf(d.image, d.imageCredit);
+const geo = detectLocations({ title: d.title, tags: d.tags, body: post.body ?? '', location: d.location }, places as any[]);
+const ld = [
+  articleLd({ type: d.schemaType, title: d.title, url: post.url, description: d.description, image: d.image, published: d.date, modified: d.updated ?? d.date, authorName, authorUrl: authorUrl(d.author), section: cat, keywords: d.tags, wordCount: wordCount(post.body ?? ''), locations: geo.contentLocation, createdAt: geo.locationCreated }, site),
+  breadcrumb([{ name: 'Home', url: '/' }, { name: cat, url: categoryUrl(d.category) }, { name: d.title, url: post.url }]),
+];
+---
+<Base title={d.metaTitle || d.title} description={d.description} path={post.url} pageType="article" robots={d.robots === 'index,follow' ? undefined : d.robots} image={d.image} imageAlt={imgAlt} ogType="article" canonical={d.canonical} ogTitle={d.ogTitle} ogDescription={d.ogDescription} ogImage={d.ogImage} jsonLd={ld} published={d.date} modified={d.updated ?? d.date} section={cat} tags={d.tags}>
+  <div class="layout">
+    <article class="card" data-pagefind-body>
+      <nav class="crumb" aria-label="Breadcrumb"><a href="/">Home</a> &rsaquo; <a href={categoryUrl(d.category)}>{cat}</a></nav>
+      <p class="kick"><a href={categoryUrl(d.category)}>{cat}</a></p>
+      <h1>{d.title}</h1>
+      <p class="meta">
+        By <a rel="author" href={authorUrl(d.author)}>{authorName}</a>
+        &middot; <time datetime={d.date.toISOString()}>{fmtDate(d.date)}</time>
+        {d.updated && <> &middot; Updated <time datetime={d.updated.toISOString()}>{fmtDate(d.updated)}</time></>}
+        &middot; {readTime(post.body ?? '')} min read
+      </p>
+      {d.image && (
+        <figure class="hero">
+          <img class="thumb" src={d.image} alt={imgAlt} srcset={imgSet?.srcset} sizes={imgSet?.sizes} width="1200" height="675" fetchpriority="high">
+          {(imgCaption || imgCredit) && <figcaption>{imgCaption}{imgCaption && imgCredit && <> &middot; </>}{imgCredit}</figcaption>}
+        </figure>
+      )}
+      {d.keyPoints.length > 0 && (
+        <div class="keys"><strong>Key points</strong><ul>{d.keyPoints.map((k) => <li>{k}</li>)}</ul></div>
+      )}
+      <div class="content">{bodyHtml ? <Fragment set:html={bodyHtml} /> : <Content />}</div>
+      <PushPrompt />
+      {d.tags.length > 0 && <div class="tags">{d.tags.map((t) => <a href={tagUrl(slugify(t))}>{t}</a>)}</div>}
+      <AlertsLink category={d.category} focus={d.focusKeyword} />
+      <div class="author">
+        <div class="ava" aria-hidden="true">{authorName[0]}</div>
+        <div><strong style="font-family:var(--fh)">{authorName}</strong>{author?.data.bio && <div class="meta">{author.data.bio}</div>}</div>
+      </div>
+    </article>
+    <ReadNext post={plan.next} />
+    <Related posts={related} />
+    <Trending />
+  </div>
+  <Beacon />
+  <AdLoader hideAll={d.ads.hideAll} hidePopunder={d.ads.hidePopunder} />
+</Base>

@@ -1,0 +1,13 @@
+{
+  "hardBlock": false,
+  "blockHosts": [],
+  "allowHosts": [],
+  "sizeWarnKb": 0,
+  "maxWidth": 0,
+  "quality": 85,
+  "storage": "repo",
+  "askFirst": false,
+  "askHosts": [],
+  "nameOrder": ["alt", "caption", "heading", "keyword", "oldName", "handle"],
+  "enabled": true
+}

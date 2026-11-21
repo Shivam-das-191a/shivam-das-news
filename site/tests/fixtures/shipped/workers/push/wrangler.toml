@@ -1,0 +1,54 @@
+name = "news-push"
+main = "index.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+SITE_ORIGIN = "https://YOUR-DOMAIN"   # the only website that may call, for example https://yourdomain.com (same https:// and host, no slash at the end)
+
+# Countries where "Learn from what I read" starts OFF (v0.52.0). Keep it the same as CONSENT_COUNTRIES in workers/geo/wrangler.toml.
+# A reader whose country is unknown also starts with it off.
+CONSENT_COUNTRIES = "AT,BE,BG,HR,CY,CZ,DK,EE,FI,FR,DE,GR,HU,IE,IT,LV,LT,LU,MT,NL,PL,PT,RO,SK,SI,ES,SE,IS,LI,NO,GB,CH"
+
+# v0.73.0 (BOT_PROTECTION Part 3b): the kill switch for NEW subscriptions. "true", "1", "yes" or "on" makes POST /subscribe and GET /stamp answer 503 at once (no deploy needed).
+# It never stops /unsubscribe, /preferences or /test: a reader can always read, change and remove their own data. Use it during an attack, then set it back to "false".
+PUSH_SUBSCRIBE_OFF = "false"
+
+# The public half of the sender key pair, made once with "npm run vapid" in the site folder. Empty = sending stays off. Safe to publish.
+VAPID_PUBLIC_KEY = ""
+
+# v0.69.0 (part 7b): the kill switch. "true", "1", "yes" or "on" pauses all sending and all planning at the next call (no deploy needed: change it in the Cloudflare dashboard).
+PUSH_PAUSED = "false"
+
+# The D1 database. Create it once:  npx wrangler d1 create news-push   then copy the database_id it prints.
+# Then apply the tables once:       npx wrangler d1 execute news-push --remote --file=schema.sql
+[[d1_databases]]
+binding = "DB"
+database_name = "news-push"
+database_id = "YOUR-DATABASE-ID"
+
+# Optional rate limit per visitor (PLAN 31.11). Without it the Worker still limits new subscribers in total (200 an hour, see prefs.js).
+# Check the current syntax in the Cloudflare docs ("Rate Limiting binding") before you switch it on:
+# [[unsafe.bindings]]
+# name = "RATE_LIMITER"
+# type = "ratelimit"
+# namespace_id = "1003"
+# simple = { limit = 10, period = 60 }
+
+# v0.62.0: POST /test (the test notification button) needs the sender keys. Without VAPID_PUBLIC_KEY above and the two secrets below it answers 503 and sends nothing.
+# The two secret values of the sender (the key and the contact address) are never in this file. How to set them: site/README.md, section "Push encryption, VAPID and the send function" (v0.53.0).
+# v0.73.0: POST /subscribe needs a signed stamp from GET /stamp. One more secret (a long random text, 40 or more characters; make it with: openssl rand -hex 32):
+#   cd workers/push ; npx wrangler secret put STAMP_SECRET
+# Without it /subscribe and GET /stamp answer 503 and no one can subscribe. Never write it in this file. The contact Worker has its own STAMP_SECRET (a stamp of one form is no good for another).
+# v0.64.0: POST /announce (part 6a) is called by the deploy job, not by a browser. It needs one secret of at least 32 characters (make it with: openssl rand -hex 32):
+#   cd workers/push ; npx wrangler secret put ANNOUNCE_SECRET
+# The same value goes into the GitHub repository secret PUSH_ANNOUNCE_SECRET (used by the push.yml job of part 7). Without it /announce answers 503. Never write it in this file.
+# v0.65.0: /announce also opens each post's page (live check, part 6b): status 200, HTML, no noindex. No new variable or secret is needed.
+# v0.68.0: sender.js (part 7a) sends one batch from the queue.
+# v0.69.0: control.js (part 7b) holds the kill switch PUSH_PAUSED, plans the delivery after /announce and runs the cron below. All of it works only when the D1 database, VAPID_PUBLIC_KEY and the two secrets are set.
+# Later parts add: the cron that sends (part 7b), the sender of the announced posts (parts 6b to 7) and ALLOWED_USERS for the dashboard (part 10).
+# Parts 1 to 3 need no secret to run their tests. Deploy: cd workers/push ; npx wrangler deploy
+
+# v0.83.0 (part 7c): the same cron also runs the clean-up of old rows once an hour (cleanup.js, at minute 7). It needs only the D1 database, not the sender keys. No new variable or secret.
+# v0.69.0 (part 7b): send one batch from the queue every minute (the free plan allows cron triggers). Without the sender keys the tick does nothing.
+[triggers]
+crons = [ "* * * * *" ]

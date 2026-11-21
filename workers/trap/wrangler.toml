@@ -1,0 +1,29 @@
+name = "news-trap"
+main = "index.js"
+compatibility_date = "2026-01-01"
+
+# v0.90.0 (BOT_PROTECTION Part 7b). v0.101.38: the kill switch below is "true" and CF_ACCOUNT_ID and CF_LIST_ID hold the owner's real ids (ids, not secrets),
+# so the Worker can fill the IP list once CF_API_TOKEN is set. It still blocks nobody: there is no route and no WAF rule uses the list.
+# The free pages.dev address is not a zone of the owner's account, so a Worker route and a WAF custom rule cannot be attached to it.
+# They need a custom domain (a zone on this Cloudflare account).
+# IMPORTANT: wrangler deploy writes every value of [vars] below over the one in the dashboard, so keep these values correct.
+
+[vars] below over the one in the dashboard. Before you deploy, paste your real CF_ACCOUNT_ID and CF_LIST_ID here (they are ids, not secrets).
+
+[vars]
+TRAP_ENABLED = "true"    # the kill switch: the trap works ONLY when this is exactly "true". Anything else keeps it off. Change it in the Cloudflare dashboard, no deploy needed.
+CF_ACCOUNT_ID = "d3aad4c0a78d945e9475489bce5f1760"       # 32 letters or numbers (a to f, 0 to 9): the Cloudflare account id
+CF_LIST_ID = "8d6a7802feb24e91a200c0874a56db3c"          # 32 letters or numbers (a to f, 0 to 9): the id of the IP list that the WAF rule blocks
+OWN_IPS = ""             # the owner's own addresses, comma separated; they are never blocked
+BLOCK_HOURS = "24"       # 1 to 168
+
+# Secret (never write it in this file):  npx wrangler secret put CF_API_TOKEN
+# The token needs only the permission "Account Filter Lists: Edit". Nothing else.
+
+# The clean-up job: deletes only our own expired list items, once an hour. It does nothing until the ids and the secret are set.
+[triggers]
+crons = ["23 * * * *"]
+
+# The route is NOT switched on. When the owner is ready (7c), add it here, for the trap path only, for example:
+# routes = [{ pattern = "https://shivam-das-news.pages.dev/trap/", zone_name = "https://shivam-das-news.pages.dev" }]
+# Deploy: cd workers/trap ; npx wrangler deploy

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Shivam Das News – Theme Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Lexend:wght@600;800&display=swap">
+<style>
+:root{--acc:#2f6bff;--bg2:#eef7ff;--sky-l:#fff;--sky:var(--sky-l);--grid:transparent;--card:#fff;--text:#12203a;--muted:#5a6b85;--line:#12203a;--r:18px;
+--fh:Lexend,"Hubot Sans",system-ui,sans-serif;--fb:Inter,"Mona Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg2:#0d1630;--sky:#101a3a;--grid:transparent;--card:#16213f;--text:#eaf0ff;--muted:#a3b3d3;--line:#050a18}}
+:root[data-theme="dark"]{--bg2:#0d1630;--sky:#101a3a;--grid:transparent;--card:#16213f;--text:#eaf0ff;--muted:#a3b3d3;--line:#050a18}
+:root[data-style="sunset"]{--acc:#d94a00}:root[data-style="mint"]{--acc:#0b8a55}:root[data-style="grape"]{--acc:#7c3aed}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+body{margin:0;min-height:100%;font:17px/1.6 var(--fb);color:var(--text);background:linear-gradient(var(--grid) 1px,transparent 1px) 0 0/32px 32px,linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/32px 32px,var(--sky)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--sky);z-index:10}
+a{color:inherit;text-decoration:none}a:focus-visible,button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+h1,h2,h3{font-family:var(--fh);line-height:1.2;margin:0}
+.wrap{max-width:1200px;margin:0 auto;padding:12px 16px 40px}
+.card{background:var(--card);border:2px solid var(--line);border-radius:var(--r);box-shadow:0 5px 0 var(--line)}
+header.card{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;gap:12px;padding:8px 12px;margin-bottom:16px}
+.brand{display:flex;align-items:center;gap:10px;font:800 18px var(--fh);white-space:nowrap}
+.logo{display:grid;place-items:center;width:38px;height:38px;background:var(--acc);color:#fff;border:2px solid var(--line);border-radius:10px;transform:rotate(-8deg);transition:transform .2s}
+.brand:hover .logo{transform:rotate(4deg)}
+.sp{flex:1}
+.menu{position:absolute;right:8px;top:calc(100% + 10px);width:min(320px,calc(100vw - 32px));padding:14px;display:none;z-index:30}
+.menu.open{display:block}
+.menu h3{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px}
+.menu nav{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.menu nav a{padding:12px;border-radius:12px;font:600 15px var(--fh);border:2px solid var(--line);text-align:center}
+.menu nav a:hover{background:var(--acc);color:#fff}
+.menu .dots{gap:12px}.menu .dot{width:38px;height:38px}
+.tools{display:flex;gap:8px;align-items:center}
+.icon{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;display:block}
+.btn{display:inline-grid;place-items:center;min-width:44px;height:44px;border:2px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);font:600 15px var(--fh);cursor:pointer}
+.dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0}
+.dots{display:flex;gap:6px;align-items:center}
+.ticker{display:flex;gap:12px;align-items:center;padding:8px 14px;margin-bottom:20px;overflow:hidden;white-space:nowrap}
+.ticker b{background:#e5232d;color:#fff;border-radius:8px;padding:2px 10px;font:800 12px var(--fh);letter-spacing:.06em}
+.layout{display:grid;gap:22px}
+@media(min-width:1024px){.layout{grid-template-columns:minmax(0,1fr) 320px}}
+.thumb{aspect-ratio:16/9;border-radius:12px;background:var(--acc);filter:hue-rotate(calc(var(--i,0)*28deg));border:2px solid var(--line)}
+.kick{font:800 12px var(--fh);text-transform:uppercase;letter-spacing:.08em;color:var(--acc)}
+.meta{color:var(--muted);font-size:14px}
+.lead{display:grid;gap:16px;padding:14px;margin-bottom:22px}
+@media(min-width:768px){.lead{grid-template-columns:1.3fr 1fr;align-items:center}}
+.lead h2{font-size:clamp(24px,3.4vw,38px);margin:6px 0 10px}
+.grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+.post{padding:12px;display:block;transition:transform .15s,box-shadow .15s}
+.post:hover{transform:translateY(-3px);box-shadow:0 8px 0 var(--line)}
+.post h3{font-size:18px;margin:10px 0 4px}
+h2.sec{font-size:22px;margin:0 0 14px}
+aside .card{padding:16px;margin-bottom:20px}
+aside ol{margin:0;padding:0;list-style:none;counter-reset:n}
+aside li{counter-increment:n;display:flex;gap:10px;padding:10px 0;border-top:2px dashed color-mix(in srgb,var(--line) 25%,transparent);font:600 15px/1.35 var(--fh)}
+aside li:first-child{border:0}
+aside li::before{content:counter(n);flex:none;display:grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--acc);color:#fff;font-size:13px}
+article.card{padding:clamp(16px,3vw,32px)}
+article h1{font-size:clamp(28px,4.4vw,44px);margin:8px 0 12px}
+article .content{max-width:70ch}article h2{font-size:24px;margin:28px 0 8px}
+.keys{background:var(--acc);color:#fff;border:2px solid var(--line);border-radius:14px;padding:12px 18px;margin:18px 0}
+.keys b{font-family:var(--fh)}.keys ul{margin:6px 0 0;padding-left:20px}
+.share{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0}
+.author{display:flex;gap:14px;align-items:center;border-top:2px dashed color-mix(in srgb,var(--line) 30%,transparent);padding-top:18px}
+.ava{flex:none;width:56px;height:56px;border-radius:50%;background:var(--acc);border:2px solid var(--line);color:#fff;display:grid;place-items:center;font:800 22px var(--fh)}
+.crumb{font-size:14px;color:var(--muted)}
+footer{margin-top:30px;padding:18px;text-align:center;color:var(--muted);font-size:14px}
+[hidden]{display:none!important}
+@media(min-width:768px) and (max-width:1023px){.wrap{padding:16px 24px 40px}.grid{grid-template-columns:repeat(2,1fr)}aside{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}aside .card{margin:0}}
+@media(max-width:767px){.wrap{padding:8px 12px 96px}.brand{font-size:16px}.logo{width:34px;height:34px}.ticker{margin-bottom:14px;font-size:14px}.lead{padding:10px}.grid{grid-template-columns:1fr;gap:14px}.share{position:fixed;left:0;right:0;bottom:0;margin:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:2px solid var(--line);z-index:15;flex-wrap:nowrap;overflow-x:auto}.share .btn{flex:none;padding:0 14px}}
+@media(max-width:380px){header.card{gap:8px;padding:8px}.brand{font-size:14px;gap:8px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{header,.ticker,aside,.share{display:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="card">
+  <a class="brand" href="#home"><span class="logo">S</span><span>Shivam Das News</span></a>
+  <span class="sp"></span>
+  <div class="tools">
+    <button class="btn" id="mode" aria-label="Toggle dark mode"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg></button>
+    <button class="btn" id="mbtn" aria-label="Menu" aria-expanded="false" aria-controls="menu"><svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="5" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.8" fill="currentColor" stroke="none"/></svg></button>
+  </div>
+  <div class="menu card" id="menu">
+    <h3>Categories</h3>
+    <nav id="nav" aria-label="Categories"></nav>
+    <h3>Colour style</h3>
+    <span class="dots" role="group" aria-label="Colour style">
+      <button class="dot" style="background:#2f6bff" data-s="sky" aria-label="Sky"></button>
+      <button class="dot" style="background:#d94a00" data-s="sunset" aria-label="Sunset"></button>
+      <button class="dot" style="background:#0b8a55" data-s="mint" aria-label="Mint"></button>
+      <button class="dot" style="background:#7c3aed" data-s="grape" aria-label="Grape"></button>
+    </span>
+  </div>
+</header>
+
+<div class="ticker card"><b>BREAKING</b><span>Breaking headline strip appears here when a post is flagged as breaking.</span></div>
+
+<div class="layout">
+  <main id="main">
+    <section id="home">
+      <a class="card lead post" href="#article">
+        <div class="thumb" style="--i:0"></div>
+        <div><span class="kick">Top story</span><h2>Lead story headline sits here, large and clear</h2><p class="meta">By Shivam Das · 4 min read</p></div>
+      </a>
+      <h2 class="sec">Latest news</h2>
+      <div class="grid" id="grid"></div>
+    </section>
+
+    <section id="art" hidden>
+      <article class="card">
+        <p class="crumb">Home › Technology</p>
+        <span class="kick">Technology</span>
+        <h1>Article headline is the only H1 on the page</h1>
+        <p class="meta">By <a href="#home"><b>Shivam Das</b></a> · Published Nov 13, 2026 · Updated today · 4 min read</p>
+        <div class="thumb" style="--i:2;margin-top:14px"></div>
+        <div class="keys"><b>Key points</b><ul><li>First short, factual takeaway for readers and search.</li><li>Second takeaway in plain words.</li><li>Third takeaway.</li></ul></div>
+        <div class="content">
+          <p>Article text is written straight into the page at build time, so readers and crawlers see everything instantly, even with JavaScript off.</p>
+          <h2>Section heading starts at H2</h2>
+          <p>Cards sit on a calm sky grid with strong contrast, large type and a 70-character reading width for easy reading on any phone.</p>
+        </div>
+        <div class="share"><button class="btn">WhatsApp</button><button class="btn">Telegram</button><button class="btn">X</button><button class="btn">Copy link</button></div>
+        <div class="author"><div class="ava">S</div><div><b style="font-family:var(--fh)">Shivam Das</b><div class="meta">Author bio, photo and links come from the setup wizard.</div></div></div>
+      </article>
+    </section>
+  </main>
+
+  <aside>
+    <div class="card"><h2 class="sec">Trending now</h2><ol id="trend"></ol></div>
+    <div class="card"><h2 class="sec">Topics</h2><div id="chips" style="display:flex;flex-wrap:wrap;gap:8px"></div></div>
+  </aside>
+</div>
+<footer class="card">© 2026 Shivam Das News · About · Contact · Editorial Policy · Corrections · Privacy</footer>
+</div>
+
+<script>
+var C=["World","Politics","Business","Technology","Sports","Health"],
+T=["Headline for a developing story in this category","Short clear headline written without clickbait","Another real headline fills this card","Readable titles keep two or three lines","Strong hierarchy helps readers scan quickly","Every card keeps the same 16:9 image ratio"];
+var nav=document.getElementById("nav"),g=document.getElementById("grid"),tr=document.getElementById("trend"),ch=document.getElementById("chips");
+C.forEach(function(c){nav.insertAdjacentHTML("beforeend",'<a href="#home">'+c+"</a>");ch.insertAdjacentHTML("beforeend",'<a class="btn" style="display:grid;place-items:center;padding:0 14px;height:36px" href="#home">'+c+"</a>")});
+T.forEach(function(t,i){g.insertAdjacentHTML("beforeend",'<a class="card post" href="#article"><div class="thumb" style="--i:'+(i+1)+'"></div><span class="kick" style="display:block;margin-top:10px">'+C[i]+"</span><h3>"+t+'</h3><span class="meta">Shivam Das · '+(i+2)+" min read</span></a>")});
+T.slice(0,5).forEach(function(t){tr.insertAdjacentHTML("beforeend","<li><a href='#article'>"+t+"</a></li>")});
+function route(){var a=location.hash==="#article";document.getElementById("home").hidden=a;document.getElementById("art").hidden=!a;scrollTo(0,0)}
+addEventListener("hashchange",route);route();
+var mb=document.getElementById("mbtn"),mn=document.getElementById("menu");
+function cm(o){mn.classList.toggle("open",o);mb.setAttribute("aria-expanded",o)}
+mb.onclick=function(e){e.stopPropagation();cm(!mn.classList.contains("open"))};
+mn.onclick=function(e){e.stopPropagation();if(e.target.closest("a"))cm(false)};
+document.addEventListener("click",function(){cm(false)});
+addEventListener("keydown",function(e){if(e.key==="Escape")cm(false)});
+var R=document.documentElement;
+function st(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function ld(k){try{return localStorage.getItem(k)}catch(e){return null}}
+var s=ld("style"),m=ld("mode");if(s)R.dataset.style=s;if(m)R.dataset.theme=m;
+document.querySelectorAll(".dot").forEach(function(b){b.onclick=function(){R.dataset.style=b.dataset.s;st("style",b.dataset.s)}});
+document.getElementById("mode").onclick=function(){var d=R.dataset.theme?R.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;R.dataset.theme=d?"light":"dark";st("mode",R.dataset.theme)};
+</script>
+</body>
+</html>

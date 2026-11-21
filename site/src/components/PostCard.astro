@@ -1,0 +1,17 @@
+---
+import { catName } from '../lib/categories';
+import { fmtDate } from '../lib/posts';
+import { readTime } from '../lib/readtime';
+import { altOf, setOf } from '../lib/picture';
+import { SIZES } from '../lib/picture-set';
+const { post, lazy = true, level = 3 } = Astro.props;
+const Title = level === 2 ? 'h2' : 'h3';
+const d = post.data;
+const set = setOf(d.image, SIZES.card);
+---
+<a class="card post" href={post.url}>
+  {d.image && <img class="thumb" src={d.image} alt={altOf(d.image, d.imageAlt)} srcset={set?.srcset} sizes={set?.sizes} width="1200" height="675" loading={lazy ? 'lazy' : 'eager'}>}
+  <span class="kick" style="display:block;margin-top:10px">{catName(d.category)}</span>
+  <Title>{d.title}</Title>
+  <span class="meta">{fmtDate(d.date)} &middot; {readTime(post.body ?? '')} min read</span>
+</a>

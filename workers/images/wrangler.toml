@@ -1,0 +1,25 @@
+name = "news-images"
+main = "index.js"
+compatibility_date = "2026-01-01"
+
+# v0.101.41 (Phase 3c Part 2b, PLAN 34.8). The Worker downloads outside pictures for the dashboard: POST /fetch. It stores nothing.
+# NOT DEPLOYED YET and no page or screen calls it (Part 3 does). Deploy only when the owner decides:  cd workers/images ; npx wrangler deploy
+# IMPORTANT: run the deploy from this folder inside the full repository. lib.js reads two files of site/public/admin/js/ (hotlink.js, media-meta.js)
+# and ../shared/guard.js; the bundler of wrangler must be able to open them. A copy of this folder alone will not build.
+# IMPORTANT: wrangler deploy writes every value of [vars] below over the one in the dashboard, so keep these values correct.
+
+[vars]
+SITE_ORIGIN = "https://shivam-das-news.pages.dev"   # the only website whose dashboard may call (same https:// and host, no slash at the end)
+ALLOWED_USERS = "Shivam-das-191a"                   # GitHub logins that may call from the dashboard, comma separated. Empty (and no secret) = nobody, the Worker answers 503.
+
+# Kill switch. "true", "1", "yes" or "on" stops the Worker at once (answer 503). Use it during an attack, then set it back to "false".
+IMAGES_OFF = "false"
+
+# Hosts the owner blocked, comma separated, for example "badsite.com". A host name also blocks its sub names. Empty = none.
+BLOCK_HOSTS = ""
+
+# Calls per minute for one signed-in person or for the Action. The limit lives in the memory of one Worker instance (a brake, not a wall).
+CALLS_PER_MINUTE = "20"
+
+# Secret (never commit), only for the GitHub Action of Phase 3c Part 6:  npx wrangler secret put IMAGES_SECRET
+# Without it only a signed-in dashboard user can call.

@@ -1,0 +1,13 @@
+---
+import { pageSuffix } from '../lib/paginate';
+import Icon from './Icon.astro';
+const { base, page, total } = Astro.props;
+const href = (n: number) => base + pageSuffix(n);
+---
+{total > 1 && (
+  <nav class="pager" aria-label="Pagination">
+    {page > 1 ? <a class="btn ico" rel="prev" href={href(page - 1)}><Icon name="arrow-left" size={18} /><span>Newer</span></a> : <span></span>}
+    <span class="meta">Page {page} of {total}</span>
+    {page < total ? <a class="btn ico" rel="next" href={href(page + 1)}><span>Older</span><Icon name="arrow-right" size={18} /></a> : <span></span>}
+  </nav>
+)}

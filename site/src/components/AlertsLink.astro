@@ -1,0 +1,18 @@
+---
+// v0.63.0 (PLAN 31.1, push part 5c-6): the bell button at the end of an article, "Get alerts for this topic".
+// It is a plain link to /notifications/ with the story's category and focus keyword in the address; the page fills them in and saves nothing.
+// Renders nothing while config/push.json is empty, so no page changes until the owner fills it. Not an ad, no script.
+import Icon from './Icon.astro';
+import cfg from '../../config/push.json';
+import { pushConfig } from '../lib/push-client.js';
+import { topicHref } from '../lib/notifications-page.js';
+
+const { category, focus = '' } = Astro.props;
+const on = pushConfig(cfg).enabled;
+const href = topicHref(category, focus);
+---
+{on && (
+  <p class="alerts-link" data-pagefind-ignore>
+    <a class="btn ico" href={href} rel="nofollow"><Icon name="bell" size={18} /><span>Get alerts for this topic</span></a>
+  </p>
+)}

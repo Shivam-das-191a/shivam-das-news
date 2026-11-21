@@ -1,0 +1,32 @@
+name: Push announce
+# After a deploy: tells the push Worker about posts that went live in the last 2 hours (PLAN 31.4 step 2).
+# Push: runs after a push to main (Cloudflare Pages needs a moment, so the job waits first, then the script asks again if a page is not live yet).
+# Hourly: catches posts that a scheduled date just made live (rebuild.yml deploys them at minute 0).
+# It does nothing until the three secrets below exist. The Worker never sends the same post twice (the key is the permalink).
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "35 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency: { group: push-announce, cancel-in-progress: false }
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: site } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      # No packages are installed: the script uses only Node itself and files of this repository.
+      - name: Wait for the deploy
+        if: github.event_name == 'push'
+        run: sleep 120
+      - name: Announce new posts
+        run: node scripts/push-announce.mjs --wait 90 --tries 5
+        env:
+          SITE_URL: ${{ secrets.SITE_URL }}
+          PUSH_ENDPOINT: ${{ secrets.PUSH_ENDPOINT }}
+          PUSH_ANNOUNCE_SECRET: ${{ secrets.PUSH_ANNOUNCE_SECRET }}

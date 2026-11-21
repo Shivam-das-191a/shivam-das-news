@@ -1,0 +1,35 @@
+name = "news-contact"
+main = "index.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+SITE_ORIGIN = "https://shivam-das-news.pages.dev"   # the only website that may send a message, for example https://yourdomain.com (same https:// and host, no slash at the end)
+
+# Kill switch (v0.72.0). "true", "1", "yes" or "on" stops the form and the stamp route at once (answer 503). Use it during an attack, then set it back to "false".
+CONTACT_OFF = "false"
+
+# The GitHub logins that may read and update the inbox (v0.49.0), comma separated, for example "shivam-das". With it empty nobody can read messages.
+ALLOWED_USERS = "Shivam-das-191a"
+
+# Secret (never commit):  npx wrangler secret put TURNSTILE_SECRET
+# It is the secret key of a Cloudflare Turnstile widget (Cloudflare dashboard, Turnstile, add widget for your domain).
+# Without it the endpoint answers 503 and stores nothing.
+# Second secret (v0.72.0), for the signed fill-time stamp:  npx wrangler secret put STAMP_SECRET
+# Use a long random text (for example 40 or more random characters). Never commit it. Without it the endpoint and GET /stamp answer 503.
+# The code of ../shared/guard.js is bundled into the Worker by wrangler when you deploy from this folder.
+
+# The D1 database. Create it once:  npx wrangler d1 create news-contact   then copy the database_id it prints.
+# Then apply the table once:        npx wrangler d1 execute news-contact --remote --file=schema.sql
+[[d1_databases]]
+binding = "DB"
+database_name = "news-contact"
+database_id = "337ceaec-0296-4ba6-a91c-3f9c22ffb6be"
+
+# Optional rate limit per visitor (BUGS N6). Without it the endpoint still limits by email address and in total (see lib.js).
+# Check the current syntax in the Cloudflare docs ("Rate Limiting binding") before you switch it on:
+# [[unsafe.bindings]]
+# name = "RATE_LIMITER"
+# type = "ratelimit"
+# namespace_id = "1002"
+# simple = { limit = 3, period = 60 }
+# Deploy: cd workers/contact ; npx wrangler deploy

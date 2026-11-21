@@ -1,0 +1,113 @@
+---
+import '@fontsource/lexend/latin-600.css';
+import '@fontsource/lexend/latin-800.css';
+import '@fontsource/inter/latin-400.css';
+import '@fontsource/inter/latin-600.css';
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import site from '../../config/site.json';
+import { absUrl, shareValues } from '../lib/seo';
+import { jsonLdString } from '../lib/schema';
+import { iconState } from '../lib/icons';
+import { verificationCodes } from '../lib/verification';
+import ownBrowserSrc from '../lib/own-browser.js?raw';
+
+interface Props {
+  title: string;
+  fullTitle?: string;
+  description?: string;
+  path: string;
+  pageType: 'home' | 'article' | 'category' | 'tag' | 'author' | 'page' | 'search' | 'notifications' | '404';
+  robots?: string;
+  image?: string;
+  imageAlt?: string;
+  ogType?: 'website' | 'article';
+  canonical?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  jsonLd?: object[];
+  published?: Date;
+  modified?: Date;
+  section?: string;
+  tags?: string[];
+}
+const { title, fullTitle, description = '', path, pageType, robots, image, imageAlt, ogType = 'website', canonical, ogTitle, ogDescription, ogImage, jsonLd = [], published, modified, section, tags = [] } = Astro.props;
+const fullT = fullTitle ?? `${title} | ${site.siteName}`;
+const canon = canonical || absUrl(path, new URL(Astro.site ?? 'http://localhost:4321').origin);
+const robotsValue = robots ?? 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1';
+const share = shareValues({ title, description, image, imageAlt, ogTitle, ogDescription, ogImage });
+const img = (share.image || site.defaultImage) ? absUrl(share.image || site.defaultImage, new URL(Astro.site ?? 'http://localhost:4321').origin) : undefined;
+const imgAlt = share.imageAlt || (share.image ? share.title : `${site.siteName}: ${site.tagline}`);
+const icons = iconState();
+const v = site.verification;
+const googleCodes = verificationCodes(v.google);
+const bingCodes = verificationCodes(v.bing);
+const yandexCodes = verificationCodes(v.yandex);
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>{fullT}</title>
+  {description && <meta name="description" content={description}>}
+  <link rel="canonical" href={canon}>
+  <meta name="robots" content={robotsValue}>
+  <meta name="theme-color" content={site.themeColor}>
+  <meta name="color-scheme" content="light dark">
+  {googleCodes.map((c) => <meta name="google-site-verification" content={c}>)}
+  {bingCodes.map((c) => <meta name="msvalidate.01" content={c}>)}
+  {yandexCodes.map((c) => <meta name="yandex-verification" content={c}>)}
+  <meta property="og:type" content={ogType}>
+  <meta property="og:site_name" content={site.siteName}>
+  <meta property="og:title" content={share.title}>
+  {share.description && <meta property="og:description" content={share.description}>}
+  <meta property="og:url" content={canon}>
+  <meta property="og:locale" content={site.locale}>
+  {img && <meta property="og:image" content={img}>}
+  {img && <meta property="og:image:alt" content={imgAlt}>}
+  {img && !share.image && <meta property="og:image:width" content="1200">}
+  {img && !share.image && <meta property="og:image:height" content="630">}
+  {ogType === 'article' && published && <meta property="article:published_time" content={published.toISOString()}>}
+  {ogType === 'article' && modified && <meta property="article:modified_time" content={modified.toISOString()}>}
+  {ogType === 'article' && section && <meta property="article:section" content={section}>}
+  {ogType === 'article' && tags.map((t) => <meta property="article:tag" content={t}>)}
+  <meta name="twitter:card" content={img ? 'summary_large_image' : 'summary'}>
+  <meta name="twitter:title" content={share.title}>
+  {share.description && <meta name="twitter:description" content={share.description}>}
+  {img && <meta name="twitter:image" content={img}>}
+  {img && <meta name="twitter:image:alt" content={imgAlt}>}
+  {icons.ico && <link rel="icon" href="/favicon.ico" sizes="48x48">}
+  {icons.favicon && <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">}
+  {icons.apple && <link rel="apple-touch-icon" href="/apple-touch-icon.png">}
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="alternate" type="application/rss+xml" title={site.siteName} href="/feed.xml">
+  {jsonLd.map((o) => <script is:inline type="application/ld+json" set:html={jsonLdString(o)}></script>)}
+  <script is:inline>
+    try{var r=document.documentElement,s=localStorage.getItem('style'),m=localStorage.getItem('mode');if(s)r.dataset.style=s;if(m)r.dataset.theme=m}catch(e){}
+  </script>
+  <script is:inline set:html={`${ownBrowserSrc}\nownBrowserSwitch(window);`}></script>
+  <slot name="head" />
+</head>
+<body data-page-type={pageType}>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="wrap">
+    <Header />
+    <main id="main"><slot /></main>
+    <Footer />
+  </div>
+  <script is:inline>
+    (function(){var r=document.documentElement;
+    function save(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+    document.querySelectorAll('.dot').forEach(function(b){b.onclick=function(){r.dataset.style=b.dataset.s;save('style',b.dataset.s)}});
+    var mb=document.getElementById('mode');
+    if(mb)mb.onclick=function(){var d=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=d?'light':'dark';save('mode',r.dataset.theme)};
+    var dt=document.querySelector('.menu-wrap');
+    document.addEventListener('click',function(e){if(dt&&dt.open&&!dt.contains(e.target))dt.open=false});
+    addEventListener('keydown',function(e){if(e.key==='Escape'&&dt)dt.open=false});})();
+  </script>
+</body>
+</html>

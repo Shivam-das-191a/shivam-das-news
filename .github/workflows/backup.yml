@@ -1,0 +1,34 @@
+name: Weekly backup
+# Every Sunday: a Git tag of the current state (backup-YYYY-MM-DD) plus a zip of the
+# content, settings and images, kept for 90 days as a workflow artifact (BUGS B3, PLAN 28.5).
+# The XML export is made in the dashboard (Export screen) and is not part of this job.
+on:
+  schedule:
+    - cron: "30 2 * * 0"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Set the backup name
+        run: echo "NAME=backup-$(date -u +%Y-%m-%d)" >> "$GITHUB_ENV"
+      - name: Tag the current state
+        run: |
+          if git rev-parse -q --verify "refs/tags/$NAME" >/dev/null; then
+            echo "Tag $NAME already exists, skipping the tag."
+          else
+            git tag "$NAME"
+            git push origin "$NAME"
+          fi
+      - name: Zip content, settings and images
+        run: |
+          zip -r "$NAME.zip" site/content site/config site/public/media site/brand -x "*.gitkeep"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.NAME }}
+          path: ${{ env.NAME }}.zip
+          retention-days: 90

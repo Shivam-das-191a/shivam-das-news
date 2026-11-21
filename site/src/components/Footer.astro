@@ -1,0 +1,28 @@
+---
+import site from '../../config/site.json';
+import footerCfg from '../../config/footer.json';
+import { getStaticPages } from '../lib/posts';
+import { projectLinks, socialLinks } from '../lib/footer';
+import Icon from './Icon.astro';
+const pages = await getStaticPages();
+const projects = projectLinks(footerCfg);
+const social = socialLinks(site.sameAs);
+---
+<footer class="foot card">
+  <nav aria-label="Site pages">{pages.map((p) => <a href={p.url}>{p.data.title}</a>)}<a href="/sitemap/">Sitemap</a></nav>
+  {projects.length > 0 && (
+    <nav class="foot-row" aria-label="Our other projects">
+      {projects.map((p) => (
+        <a href={p.url} target="_blank" rel="noopener"><Icon name={p.icon} size={24} /><span>{p.name}<span class="sr"> (opens in a new tab)</span></span></a>
+      ))}
+    </nav>
+  )}
+  {social.length > 0 && (
+    <nav class="foot-row" aria-label="Follow us">
+      {social.map((s) => (
+        <a href={s.url} target="_blank" rel="me noopener noreferrer" aria-label={`${s.label}, opens in a new tab`}>{s.icon ? <Icon name={s.icon} size={22} /> : <span>{s.label}</span>}</a>
+      ))}
+    </nav>
+  )}
+  <div>&copy; {new Date().getFullYear()} {site.siteName}</div>
+</footer>

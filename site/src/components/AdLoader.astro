@@ -1,0 +1,14 @@
+---
+// v0.20.0 (AdSense id from ads.json since v0.24.0): the ONLY place where an ad script can enter a page. Used by the article template and nowhere else (PLAN 29.1, BUGS H1, H2).
+// Renders nothing with the default config (compliance mode), so no page changes until the owner turns it on.
+import clientSrc from '../lib/ads-client.js?raw';
+import cfg from '../../config/ad-loader.json';
+import adsCfg from '../../config/ads.json';
+import { adLoaderPlan } from '../lib/ad-loader';
+import { jsonLdString } from '../lib/schema';
+
+const { hideAll = false, hidePopunder = false } = Astro.props;
+const plan = hideAll ? null : adLoaderPlan(cfg, adsCfg.adsensePublisherId);
+const settings = plan ? { ...plan, hideAll: false, hidePopunder: Boolean(hidePopunder) } : null;
+---
+{settings && <script is:inline data-ad-loader set:html={`${clientSrc}\nadsClient(window, ${jsonLdString(settings)});`}></script>}

@@ -1,0 +1,9 @@
+name = "news-admin-auth"
+main = "index.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+ADMIN_ORIGIN = "https://shivam-das-news.pages.dev"   # the site origin that serves /admin/
+ALLOWED_USERS = "Shivam-das-191a"                      # optional: "shivam-das,editor1"
+GITHUB_SCOPE = "repo"                   # use "public_repo" for a public repo
+# Secrets (never commit): wrangler secret put GITHUB_CLIENT_ID ; wrangler secret put GITHUB_CLIENT_SECRET

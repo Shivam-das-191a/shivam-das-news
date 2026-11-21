@@ -1,0 +1,27 @@
+---
+import { render } from 'astro:content';
+import Base from '../../../../../layouts/Base.astro';
+import { getStaticPages } from '../../../../../lib/posts';
+import { breadcrumb, simplePage, pageKind } from '../../../../../lib/schema';
+import ContactForm from '../../../../../components/ContactForm.astro';
+import { listingHead } from '../../../../../lib/seo';
+
+export async function getStaticPaths() {
+  const pages = await getStaticPages();
+  return pages.map((p) => ({
+    params: { year: p.parts.y, month: p.parts.m, day: p.parts.d, slug: p.data.permalink },
+    props: { page: p },
+  }));
+}
+const { page } = Astro.props;
+const { Content } = await render(page);
+const head = listingHead({ title: page.data.title, description: page.data.description, metaTitle: page.data.metaTitle, metaDescription: page.data.metaDescription });
+const ld = [breadcrumb([{ name: 'Home', url: '/' }, { name: page.data.title, url: page.url }]), simplePage(pageKind(page.data.permalink), page.data.title, page.url, page.data.description)];
+---
+<Base title={head.title} description={head.description} path={page.url} pageType="page" jsonLd={ld}>
+  <article class="card" data-pagefind-body>
+    <h1>{page.data.title}</h1>
+    <div class="content"><Content /></div>
+  </article>
+  {page.data.permalink === 'contact-us' && <ContactForm />}
+</Base>

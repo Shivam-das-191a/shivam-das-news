@@ -1,0 +1,31 @@
+name: IndexNow ping
+# Push: pings pages of content files that changed in this push (plus anything new in the sitemaps).
+# Hourly: pings posts that a scheduled date just made live (rebuild.yml deploys them at minute 0).
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "20 * * * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: site } }
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: site/package-lock.json }
+      - run: npm ci
+      - run: npm run build
+        env: { SITE_URL: "${{ secrets.SITE_URL }}", INDEXNOW_KEY: "${{ secrets.INDEXNOW_KEY }}" }
+      # Cloudflare Pages needs a moment to publish the new files before the ping.
+      - run: sleep 180
+      - name: Ping after a push
+        if: github.event_name == 'push'
+        run: node scripts/indexnow.mjs --git "${{ github.event.before }}" 1
+        env: { SITE_URL: "${{ secrets.SITE_URL }}", INDEXNOW_KEY: "${{ secrets.INDEXNOW_KEY }}" }
+      - name: Ping hourly or by hand
+        if: github.event_name != 'push'
+        run: node scripts/indexnow.mjs 1.25
+        env: { SITE_URL: "${{ secrets.SITE_URL }}", INDEXNOW_KEY: "${{ secrets.INDEXNOW_KEY }}" }

@@ -1,0 +1,45 @@
+# v0.85.0 (BOT_PROTECTION Part 6a): headers for every page and file. `X-Content-Type-Options` is set ONLY here (the blocks below inherit it), so no header is sent twice.
+# v0.86.0 (Part 6b-1): `Content-Security-Policy-Report-Only` only REPORTS in the browser console (DevTools), it never blocks anything. It has no ad hosts and no Turnstile host yet, so ads and the contact box will show up there on purpose; the dashboard is taken out with the `!` line below.
+# v0.87.0 (Part 6b-2a): the Contact Us page (the only page with the form) gets its own report-only policy: the same as the all-paths one, plus `https://challenges.cloudflare.com` for scripts and frames (Turnstile), only there. The `!` line takes the all-paths policy off that page so the two are not sent together. The date in the address changes, so the path uses placeholders.
+# v0.87.1 (Part 6b-2b): the dashboard (`/admin/*`) gets its own report-only policy: scripts from itself ONLY (its page has no inline script, no inline handler, no eval; it holds the GitHub token), `blob:` pictures for the previews. The old Blogger XML tool in the same folder has an inline script, so it gets the all-paths policy back. Each `!` line takes the policy of the block above it off, so no two policies are sent together.
+# v0.88.0 (Part 6b-3a): article pages (the only pages with the ad loader) get the all-paths report-only policy plus the ad hosts: script hosts of the Adsterra popunder, social bar and native banner (config/ad-loader.json) and of the AdSense script, and the two AdSense frame hosts. Only a first list: the console report with ads on will show what is missing (6b-3b). A test fails when the config names a script host that is not here.
+# `Referrer-Policy` is not set here on purpose: the dashboard keeps its own stricter `no-referrer` below, and public pages get theirs from a meta tag in src/layouts/Base.astro.
+/*
+  X-Content-Type-Options: nosniff
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+
+/:year/:month/:day/pages/contact-us/
+  ! Content-Security-Policy-Report-Only
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+
+/:year/:month/:day/blogs/:category/:slug/
+  ! Content-Security-Policy-Report-Only
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://afders.org https://bicea.org https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-src https://googleads.g.doubleclick.net https://tpc.googlesyndication.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+
+/admin/*
+  X-Robots-Tag: noindex, nofollow
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer
+  Cache-Control: no-store
+  ! Content-Security-Policy-Report-Only
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https:; font-src 'self' data:; connect-src 'self' https:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+
+/admin/blog-xml-tool.html
+  ! Content-Security-Policy-Report-Only
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+
+/gone.json
+  X-Robots-Tag: noindex
+
+/trending-titles.json
+  X-Robots-Tag: noindex
+  Cache-Control: public, max-age=300
+
+/title-index.json
+  X-Robots-Tag: noindex
+  Cache-Control: public, max-age=300
+
+/push-sw.js
+  Cache-Control: no-cache

@@ -1,0 +1,54 @@
+name: Validate
+# Phase 3d Part 3 (PLAN 35, LOGICS 26.1): every pull request and every push to main or to an ai/ or human/ branch runs
+# the content check, the task check, the tests and the build. A bad post is refused before it can break the site.
+# It reads the repository only: no secrets, no write permission, no deploy. Fork pull requests run it safely too.
+# It does not switch on "required checks" for main: that is the owner's setting in GitHub (README steps).
+on:
+  pull_request:
+  push:
+    branches: [main, "ai/**", "human/**"]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults: { run: { working-directory: site } }
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - name: Install
+        run: npm ci --no-audit --no-fund
+      # Fast and plain first. --base compares with the version this change started from: a changed address needs a redirect,
+      # and a settings file must not lose a key. A base that cannot be found is only a warning (the comparison is skipped).
+      - name: Content check
+        env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          BASE=""
+          if [ "$EVENT" = "pull_request" ]; then
+            BASE="origin/$BASE_REF"
+          elif [ "$REF" != "refs/heads/main" ]; then
+            BASE="origin/main"
+          elif [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then
+            BASE="$BEFORE"
+          fi
+          if [ -n "$BASE" ]; then npm run check:content -- --base "$BASE"; else npm run check:content; fi
+      - name: Task cards check
+        run: npm run tasks:check
+      - name: Tests
+        run: npm test
+      - name: Build
+        run: npm run build

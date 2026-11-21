@@ -1,0 +1,17 @@
+---
+// v0.41.0: the "Trending now" block. Home page and article pages only. Renders nothing with the default config (empty endpoint).
+// The block is hidden in the HTML; the script shows it only when the Worker returns real trending articles (no demo text, PLAN 25).
+import clientSrc from '../lib/trending-client.js?raw';
+import cfg from '../../config/analytics.json';
+import { trendingPlan } from '../lib/trending';
+import { jsonLdString } from '../lib/schema';
+
+const plan = trendingPlan(cfg);
+---
+{plan && (
+  <section class="card trending" data-trending hidden aria-labelledby="trending-title">
+    <h2 class="sec" id="trending-title">Trending now</h2>
+    <ol class="trend-list"></ol>
+  </section>
+)}
+{plan && <script is:inline data-trending-script set:html={`${clientSrc}\ntrendingClient(window, ${jsonLdString(plan)});`}></script>}

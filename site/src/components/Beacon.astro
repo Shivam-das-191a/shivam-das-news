@@ -1,0 +1,10 @@
+---
+// v0.34.0: the analytics beacon. Used by the article template only. Renders nothing with the default config (empty endpoint), so no page changes until the owner sets it.
+import clientSrc from '../lib/beacon-client.js?raw';
+import cfg from '../../config/analytics.json';
+import { beaconPlan } from '../lib/beacon';
+import { jsonLdString } from '../lib/schema';
+
+const plan = beaconPlan(cfg);
+---
+{plan && <script is:inline data-beacon set:html={`${clientSrc}\nbeaconClient(window, ${jsonLdString(plan)});`}></script>}

@@ -1,0 +1,20 @@
+---
+import Listing from '../../../components/Listing.astro';
+import site from '../../../../config/site.json';
+import { getTags } from '../../../lib/posts';
+import { tagMetaTitle, tagMetaDescription } from '../../../lib/tags';
+import { paginate, restParam } from '../../../lib/paginate';
+
+export async function getStaticPaths() {
+  const tags = await getTags();
+  return tags.flatMap((t) =>
+    paginate(t.posts, site.postsPerPage).map((pg) => ({
+      params: { tag: t.slug, rest: restParam(pg.page) },
+      // Bug S7: thin tag pages stay out of the index.
+      props: { name: t.name, slug: t.slug, thin: t.posts.length < site.thinTagMinPosts, ...pg },
+    })),
+  );
+}
+const { name, slug, thin, items, page, total } = Astro.props;
+---
+<Listing kind="tag" heading="Tag" title={name} metaTitle={tagMetaTitle(slug)} metaDescription={tagMetaDescription(slug)} posts={items} page={page} total={total} base={`/tag/${slug}/`} robots={thin ? 'noindex,follow' : undefined} />

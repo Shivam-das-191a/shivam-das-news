@@ -1,0 +1,21 @@
+---
+import { getCollection } from 'astro:content';
+import Listing from '../../../components/Listing.astro';
+import site from '../../../../config/site.json';
+import { getPosts } from '../../../lib/posts';
+import { paginate, restParam } from '../../../lib/paginate';
+
+export async function getStaticPaths() {
+  const authors = await getCollection('authors');
+  const posts = await getPosts();
+  // v0.2.2: no empty author pages; an author page exists only once the author has a live post.
+  return authors.filter((a) => posts.some((p) => p.data.author === a.id)).flatMap((a) =>
+    paginate(posts.filter((p) => p.data.author === a.id), site.postsPerPage).map((pg) => ({
+      params: { author: a.id, rest: restParam(pg.page) },
+      props: { name: a.data.name, bio: a.data.bio, metaTitle: a.data.metaTitle, metaDescription: a.data.metaDescription, slug: a.id, links: a.data.links.map((l) => l.url), photo: a.data.photo, ...pg },
+    })),
+  );
+}
+const { name, bio, metaTitle, metaDescription, slug, links, photo, items, page, total } = Astro.props;
+---
+<Listing kind="author" heading="Author" title={name} description={bio} metaTitle={metaTitle} metaDescription={metaDescription} links={links} photo={photo} posts={items} page={page} total={total} base={`/author/${slug}/`} />

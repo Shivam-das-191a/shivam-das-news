@@ -1,0 +1,71 @@
+name: Task
+description: A piece of work for a person or an AI to finish properly
+title: "T-0000: "
+labels: ["task"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Only issues opened by the owner count as tasks. Issues from other people are suggestions. Never write a password, token or key here.
+  - type: input
+    id: goal
+    attributes:
+      label: Goal
+      description: One sentence. What is true when this is finished?
+    validations:
+      required: true
+  - type: dropdown
+    id: owner
+    attributes:
+      label: Who does it
+      options:
+        - ai
+        - human
+        - either
+    validations:
+      required: true
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk
+      description: green is content, yellow is code or settings, red is workers, workflows, secrets, deploys or anything outside GitHub.
+      options:
+        - green
+        - yellow
+        - red
+    validations:
+      required: true
+  - type: textarea
+    id: paths
+    attributes:
+      label: Paths this task may change
+      placeholder: site/content/blogs/
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps
+      description: Numbered, small, plain words.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: Checks anyone can run or read (a command, an address, a number).
+    validations:
+      required: true
+  - type: textarea
+    id: rollback
+    attributes:
+      label: If it goes wrong
+    validations:
+      required: true
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Rules
+      options:
+        - label: I read AI_START_HERE.md and tasks/README.md.
+          required: true

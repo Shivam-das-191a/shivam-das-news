@@ -1,0 +1,28 @@
+---
+// v0.56.0 (PLAN 31.2): the soft prompt card at the end of the article text. Used by the article template and nowhere else.
+// Renders nothing with the default config (config/push.json is empty), so no page changes until the owner fills it.
+// The card starts hidden; push-prompt-client.js shows it only when all the rules hold. It is not an ad and loads no ad script.
+import clientSrc from '../lib/push-prompt-client.js?raw';
+import cfg from '../../config/push.json';
+import { pushPromptPlan } from '../lib/push-prompt';
+import { jsonLdString } from '../lib/schema';
+import Icon from './Icon.astro';
+
+const plan = pushPromptPlan(cfg);
+---
+{plan && (
+  <>
+    <aside class="push-prompt card" data-push-prompt data-pagefind-ignore hidden aria-label="Notifications">
+      <span class="push-prompt-ico"><Icon name="bell" size={26} /></span>
+      <div class="push-prompt-text">
+        <strong>Choose the topics you want to hear about.</strong>
+        <p class="meta">You get a notification only for what you pick. You can stop at any time.</p>
+      </div>
+      <div class="push-prompt-btns">
+        <a class="btn" href="/notifications/">Choose topics</a>
+        <button class="btn" type="button" data-push-dismiss>Not now</button>
+      </div>
+    </aside>
+    <script is:inline data-push-prompt-client set:html={`${clientSrc}\npushPromptClient(window, ${jsonLdString(plan)});`}></script>
+  </>
+)}

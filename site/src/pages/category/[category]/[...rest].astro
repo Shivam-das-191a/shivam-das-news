@@ -1,0 +1,19 @@
+---
+import Listing from '../../../components/Listing.astro';
+import site from '../../../../config/site.json';
+import { getPosts, groupBy } from '../../../lib/posts';
+import { paginate, restParam } from '../../../lib/paginate';
+import { catName, catDescription, catMetaTitle, catMetaDescription } from '../../../lib/categories';
+
+export async function getStaticPaths() {
+  const groups = groupBy(await getPosts(), (p) => p.data.category);
+  return [...groups].flatMap(([slug, items]) =>
+    paginate(items, site.postsPerPage).map((pg) => ({
+      params: { category: slug, rest: restParam(pg.page) },
+      props: { slug, ...pg },
+    })),
+  );
+}
+const { slug, items, page, total } = Astro.props;
+---
+<Listing kind="category" heading="Category" title={catName(slug)} description={catDescription(slug)} metaTitle={catMetaTitle(slug)} metaDescription={catMetaDescription(slug)} posts={items} page={page} total={total} base={`/category/${slug}/`} />

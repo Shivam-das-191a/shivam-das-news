@@ -1,0 +1,11 @@
+name = "news-geo"
+main = "index.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+SITE_ORIGIN = "https://shivam-das-news.pages.dev"   # v0.85.2: the owner's site (free pages.dev address, no custom domain); the only site that may call /geo. Same https:// and host, no slash at the end
+BLOCKED_COUNTRIES = "IN"              # two-letter codes where ads stay OFF, comma separated (India by default)
+ADS_ON_UNKNOWN = "false"              # "false" = no ads when the country cannot be found (safe default, BUGS A1)
+CONSENT_COUNTRIES = "AT,BE,BG,HR,CY,CZ,DK,EE,FI,FR,DE,GR,HU,IE,IT,LV,LT,LU,MT,NL,PL,PT,RO,SK,SI,ES,SE,IS,LI,NO,GB,CH"  # visitors here must click Accept before any ad loads (v0.25.0)
+BLOCK_DATACENTERS = "true"            # v0.82.0: "true" = no ads for visitors on cloud and hosting networks (the shared list in workers/shared/datacenter.js). Write false, 0, no or off only to test from your own cloud server; any other text keeps it ON
+# No secrets needed. Deploy: cd workers/geo ; npx wrangler deploy

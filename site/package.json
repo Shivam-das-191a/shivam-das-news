@@ -1,0 +1,33 @@
+{
+  "name": "shivam-das-news",
+  "type": "module",
+  "version": "0.101.180",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build && node scripts/build-redirects.mjs && pagefind --site dist && node scripts/indexnow.mjs --write-key && node scripts/validate-html.mjs",
+    "preview": "astro preview",
+    "test": "vitest run",
+    "icons": "node scripts/make-icons.mjs",
+    "pages": "node scripts/make-pages.mjs",
+    "check:content": "node scripts/validate-content.mjs",
+    "tasks:check": "node scripts/task-lint.mjs",
+    "preflight": "node scripts/preflight.mjs",
+    "verify:live": "node scripts/verify-live.mjs",
+    "tasks:gate": "node scripts/task-gate.mjs",
+    "docs:archive": "node scripts/archive-docs.mjs",
+    "vapid": "node scripts/make-vapid.mjs"
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.0.0",
+    "@fontsource/lexend": "^5.0.0",
+    "astro": "^5.0.0"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.1",
+    "pagefind": "^1.3.0",
+    "sharp": "^0.34.5",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

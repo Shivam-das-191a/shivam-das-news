@@ -1,0 +1,69 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Empty from '../components/Empty.astro';
+import site from '../../config/site.json';
+import { getPosts, getStaticPages, getTags, getMenuCategories, groupBy } from '../lib/posts';
+import { authorUrl, tagUrl } from '../lib/url';
+import { buildHtmlSitemap, MAX_STORIES } from '../lib/html-sitemap';
+import { breadcrumb, simplePage } from '../lib/schema';
+
+const posts = await getPosts();
+const byCat = groupBy(posts, (p) => p.data.category);
+const authors = (await getCollection('authors')).filter((a) => posts.some((p) => p.data.author === a.id));
+const map = buildHtmlSitemap({
+  pages: (await getStaticPages()).map((p) => ({ title: p.data.title, url: p.url })),
+  categories: (await getMenuCategories()).map((c) => ({ name: c.name, url: c.url, count: byCat.get(c.slug)?.length ?? 0 })),
+  authors: authors.map((a) => ({ name: a.data.name, url: authorUrl(a.id) })),
+  tags: (await getTags()).map((t) => ({ name: t.name, url: tagUrl(t.slug), count: t.posts.length })),
+  stories: posts.map((p) => ({ title: p.data.title, url: p.url, date: p.data.date, robots: p.data.robots })),
+  timeZone: site.timeZone,
+  thinTagMinPosts: site.thinTagMinPosts,
+});
+const description = `Every page, section and recent story of ${site.siteName} in one list.`;
+const ld = [breadcrumb([{ name: 'Home', url: '/' }, { name: 'Sitemap', url: '/sitemap/' }]), simplePage('WebPage', 'Sitemap', '/sitemap/', description)];
+---
+<Base title="Sitemap" description={description} path="/sitemap/" pageType="page" robots="noindex,follow" jsonLd={ld}>
+  <section>
+    <p class="kick">Sitemap</p>
+    <h1>Sitemap</h1>
+    <p class="meta">{description}</p>
+  </section>
+  {map.empty && <Empty title="Nothing to list yet" text="Pages and stories will be listed here once they are published." />}
+  {map.pages.length > 0 && (
+    <section class="card smap-box" aria-labelledby="sm-pages">
+      <h2 id="sm-pages">Pages</h2>
+      <ul class="smap">{map.pages.map((l) => <li><a href={l.url}>{l.name}</a></li>)}</ul>
+    </section>
+  )}
+  {map.categories.length > 0 && (
+    <section class="card smap-box" aria-labelledby="sm-cats">
+      <h2 id="sm-cats">Sections</h2>
+      <ul class="smap">{map.categories.map((l) => <li><a href={l.url}>{l.name}</a> <span class="meta">({l.count})</span></li>)}</ul>
+    </section>
+  )}
+  {map.authors.length > 0 && (
+    <section class="card smap-box" aria-labelledby="sm-authors">
+      <h2 id="sm-authors">Authors</h2>
+      <ul class="smap">{map.authors.map((l) => <li><a href={l.url}>{l.name}</a></li>)}</ul>
+    </section>
+  )}
+  {map.tags.length > 0 && (
+    <section class="card smap-box" aria-labelledby="sm-tags">
+      <h2 id="sm-tags">Topics</h2>
+      <ul class="smap">{map.tags.map((l) => <li><a href={l.url}>{l.name}</a> <span class="meta">({l.count})</span></li>)}</ul>
+    </section>
+  )}
+  {map.months.length > 0 && (
+    <section class="card smap-box" aria-labelledby="sm-stories">
+      <h2 id="sm-stories">Stories</h2>
+      {map.omitted > 0 && <p class="meta">The newest {MAX_STORIES} stories are listed. Older stories are in the sections and topics above.</p>}
+      {map.months.map((m) => (
+        <>
+          <h3>{m.label}</h3>
+          <ul class="smap wide">{m.stories.map((l) => <li><a href={l.url}>{l.name}</a></li>)}</ul>
+        </>
+      ))}
+    </section>
+  )}
+</Base>

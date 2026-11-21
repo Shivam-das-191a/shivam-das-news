@@ -1,0 +1,30 @@
+{
+  "siteName": "Shivam Das News",
+  "tagline": "U.S. news and in-depth analysis",
+  "description": "Breaking U.S. news and in-depth analysis for readers in the United States.",
+  "timeZone": "America/New_York",
+  "locale": "en_US",
+  "defaultAuthor": "shivam-das",
+  "activeCategoryDays": 7,
+  "postsPerPage": 20,
+  "thinTagMinPosts": 2,
+  "themeColor": "#d94a00",
+  "logo": "/icon-512.png",
+  "defaultImage": "/og-default.png",
+  "sameAs": [
+    "https://x.com/shivamdas_191a"
+  ],
+  "publisherEmail": "shivamdas5000@gmail.com",
+  "publisherCountry": "US",
+  "newsMaxAgeHours": 48,
+  "feedItems": 20,
+  "verification": {
+    "google": [
+      "zcb1sDXPTidVPfpxDjMVAHe6IdNRzUnmMSeUb8fMLpQ",
+      "BNUiiRhkIa4oM-UJ5sogZgIWmlyQr0Xu1fQVAXSkDFY"
+    ],
+    "bing": "",
+    "yandex": ""
+  },
+  "timeZoneConfirmed": true
+}

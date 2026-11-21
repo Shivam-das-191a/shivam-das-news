@@ -1,0 +1,47 @@
+name: Auto-merge
+# Phase 3d Part 4 (PLAN 35.4). OFF until the owner sets the repository variable AUTO_MERGE to "on"
+# (GitHub: Settings, Secrets and variables, Actions, Variables). It merges a pull request only when ALL of this is true:
+# the Validate run is green, the branch is ai/T-0000 or human/T-0000 from this repository, every changed file is content only
+# (posts, pages, authors, plain pictures, redirects, category names, the card's own file), nothing is deleted or renamed,
+# and no label no-automerge or needs-review is set. Rules: site/scripts/automerge-lib.mjs.
+# It runs from the main branch and NEVER checks out or runs code from the pull request.
+on:
+  workflow_run:
+    workflows: [Validate]
+    types: [completed]
+permissions:
+  contents: write
+  pull-requests: write
+concurrency:
+  group: automerge-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+jobs:
+  merge:
+    if: vars.AUTO_MERGE == 'on' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Decide
+        id: decide
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          AUTO_MERGE: ${{ vars.AUTO_MERGE }}
+          RUN_EVENT: ${{ github.event.workflow_run.event }}
+          RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: node site/scripts/automerge.mjs --repo "$REPO" --pr "$PR_NUMBER" --sha "$HEAD_SHA"
+      # --match-head-commit: if anyone pushed a new commit after the check, GitHub refuses and nothing is merged.
+      - name: Merge
+        if: steps.decide.outputs.eligible == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: gh pr merge "$PR_NUMBER" --repo "$REPO" --squash --delete-branch --match-head-commit "$HEAD_SHA"

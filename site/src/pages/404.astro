@@ -1,0 +1,14 @@
+---
+import Base from '../layouts/Base.astro';
+import PostCard from '../components/PostCard.astro';
+import { getPosts } from '../lib/posts';
+const latest = (await getPosts()).slice(0, 3);
+---
+<Base title="Page not found" path="/404/" pageType="404" robots="noindex,follow">
+  <div class="card empty">
+    <h1>Page not found</h1>
+    <p class="meta">This page may have moved or never existed.</p>
+    <p><a class="btn" href="/search/">Search the site</a></p>
+  </div>
+  {latest.length > 0 && (<><h2 class="sec">Latest news</h2><div class="grid">{latest.map((p) => <PostCard post={p} />)}</div></>)}
+</Base>

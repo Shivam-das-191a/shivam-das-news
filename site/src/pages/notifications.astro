@@ -1,0 +1,179 @@
+---
+// v0.63.0 (PLAN 31.1, push part 5c-6): the preference page (keywords to follow and to mute, quiet hours, digest, pause, authors, test notification).
+// The article bell button opens it as /notifications/?cat=...&kw=...; the page fills those two in and saves nothing until the reader presses the button. A utility page: no ads, noindex, not in the sitemap.
+// With config/push.json empty (as shipped) it shows one plain sentence and loads no script. The bell link in the header is hidden then too.
+import Base from '../layouts/Base.astro';
+import cfg from '../../config/push.json';
+import site from '../../config/site.json';
+import { pushConfig } from '../lib/push-client.js';
+import { getPosts } from '../lib/posts';
+import { activeCategories } from '../lib/active';
+import { catName } from '../lib/categories';
+import { authorNameMap } from '../lib/authors';
+import { LEVEL_CHOICES, LIMIT_CHOICES, MAX_KEYWORDS, DIGEST_MODES, MORNING_HOURS, EVENING_HOURS, DIGEST_DEFAULT, PAUSE_CHOICES, hourLabel, MIN_AUTHORS, isAuthorSlug } from '../lib/notifications-page.js';
+
+const conf = pushConfig(cfg);
+const posts = await getPosts();
+const all = [...new Set(posts.map((p) => p.data.category))].sort((a, b) => catName(a).localeCompare(catName(b)));
+const authorNames = await authorNameMap();
+const authorName = (slug: string) => authorNames.get(slug) ?? slug;
+// Authors with published stories whose id the Worker accepts; the block is shown from MIN_AUTHORS authors.
+const authors = [...new Set(posts.map((p) => p.data.author))].filter(isAuthorSlug).sort((a, b) => authorName(a).localeCompare(authorName(b)));
+const showAuthors = authors.length >= MIN_AUTHORS;
+const active = new Set(activeCategories(posts.map((p) => ({ category: p.data.category, date: p.data.date })), new Date(), site.activeCategoryDays));
+---
+<Base title="Notifications" description="Choose which stories you get notifications about." path="/notifications/" pageType="notifications" robots="noindex,follow">
+  <h1>Notifications</h1>
+  {!conf.enabled && <p class="meta">Notifications are not switched on for this site yet.</p>}
+  {conf.enabled && (
+    <section class="notify card" data-notify data-state="loading" data-api={conf.api} data-key={conf.key} aria-label="Notification choices">
+      <p class="meta" data-n-msg role="status" aria-live="polite">Loading your choices.</p>
+      <noscript><p class="meta">Notifications need JavaScript. Turn it on in your browser to choose your topics.</p></noscript>
+
+      <div data-n-ios hidden class="notify-ios">
+        <h2>On iPhone and iPad</h2>
+        <ol>
+          <li>Open this site in Safari.</li>
+          <li>Tap the Share button.</li>
+          <li>Tap Add to Home Screen.</li>
+          <li>Open the site from the new Home Screen icon and come back to this page.</li>
+        </ol>
+        <p class="meta">This needs iOS or iPadOS 16.4 or newer.</p>
+      </div>
+
+      <form data-n-form hidden onsubmit="return false">
+        <fieldset>
+          <legend>Categories</legend>
+          {all.length === 0 && <p class="meta">Categories appear here when the first stories are published.</p>}
+          {all.map((c) => (
+            <label class="notify-opt">
+              <input type="checkbox" name="category" value={c} data-name={catName(c)} />
+              <span>{catName(c)}{!active.has(c) && <span class="meta"> (no new stories lately)</span>}</span>
+            </label>
+          ))}
+          <label class="notify-opt">
+            <input type="checkbox" name="breakingAll" checked />
+            <span>Breaking news from any category</span>
+          </label>
+        </fieldset>
+
+        {showAuthors && (
+          <fieldset data-n-authors>
+            <legend>Authors</legend>
+            {authors.map((a) => (
+              <label class="notify-opt">
+                <input type="checkbox" name="author" value={a} />
+                <span>{authorName(a)}</span>
+              </label>
+            ))}
+            <p class="meta">You get stories by these authors, together with your categories and keywords. Choose at least one category, keyword or Breaking news as well.</p>
+          </fieldset>
+        )}
+
+        <fieldset>
+          <legend>Keywords to follow</legend>
+          <label class="notify-sel">
+            <span class="meta">Get stories that mention these words, even from categories you did not choose. One keyword per line, up to {MAX_KEYWORDS}.</span>
+            <textarea name="keywords" rows="3" maxlength="600" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="For example: iPhone 17"></textarea>
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Keywords to mute</legend>
+          <label class="notify-sel">
+            <span class="meta">Never get a notification about these words. One keyword per line, up to {MAX_KEYWORDS}.</span>
+            <textarea name="muted" rows="3" maxlength="600" autocomplete="off" autocapitalize="none" spellcheck="false"></textarea>
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Quiet hours</legend>
+          <label class="notify-opt">
+            <input type="checkbox" name="quietOn" checked />
+            <span>No notifications during quiet hours</span>
+          </label>
+          <div class="notify-times">
+            <label class="notify-sel"><span class="meta">From</span><input type="time" name="quietStart" value="22:00" required /></label>
+            <label class="notify-sel"><span class="meta">Until</span><input type="time" name="quietEnd" value="07:00" required /></label>
+          </div>
+          <label class="notify-opt">
+            <input type="checkbox" name="breakingInQuiet" />
+            <span>Let breaking news through during quiet hours</span>
+          </label>
+          <p class="meta">Times follow the time zone of this browser.</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Digest</legend>
+          <label class="notify-sel">
+            <span class="meta">A digest is one short summary instead of a notification for each story. Breaking news still arrives at once.</span>
+            <select name="digestMode">
+              {DIGEST_MODES.map(([v, label]) => <option value={v} selected={v === DIGEST_DEFAULT.mode}>{label}</option>)}
+            </select>
+          </label>
+          <div class="notify-times">
+            <label class="notify-sel"><span class="meta">Morning time</span>
+              <select name="digestMorning">{MORNING_HOURS.map((h) => <option value={String(h)} selected={h === DIGEST_DEFAULT.morning}>{hourLabel(h)}</option>)}</select>
+            </label>
+            <label class="notify-sel"><span class="meta">Evening time</span>
+              <select name="digestEvening">{EVENING_HOURS.map((h) => <option value={String(h)} selected={h === DIGEST_DEFAULT.evening}>{hourLabel(h)}</option>)}</select>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>How many alerts</legend>
+          {LEVEL_CHOICES.map(([v, label]) => (
+            <label class="notify-opt"><input type="radio" name="level" value={v} checked={v === 'balanced'} /><span>{label}</span></label>
+          ))}
+        </fieldset>
+
+        <fieldset>
+          <legend>Daily limit</legend>
+          <label class="notify-sel">
+            <span class="meta">Most notifications per day (breaking news may use a few extra)</span>
+            <select name="dailyLimit">
+              <option value="">Automatic for the level above</option>
+              {LIMIT_CHOICES.map((n) => <option value={String(n)}>{n} a day</option>)}
+            </select>
+          </label>
+        </fieldset>
+
+        <fieldset data-n-pause hidden>
+          <legend>Pause</legend>
+          <label class="notify-sel">
+            <span class="meta">Stop notifications for a while without losing your choices.</span>
+            <select name="pause">
+              {PAUSE_CHOICES.map(([v, label]) => <option value={v} selected={v === 'none'}>{label}</option>)}
+              <option value="keep" hidden></option>
+            </select>
+          </label>
+          <p class="meta" data-n-pause-note role="status"></p>
+        </fieldset>
+      </form>
+
+      <div data-n-suggest hidden class="notify-offer" role="region" aria-label="Topics you tapped Less like this for">
+        <h2>Fewer stories on some topics?</h2>
+        <ul data-n-suggest-list></ul>
+        <p class="meta">This only changes your choices when you press a button. Nothing is removed by itself.</p>
+      </div>
+
+      <div class="notify-btns">
+        <button class="btn" type="button" data-n-on hidden>Turn on notifications</button>
+        <button class="btn" type="button" data-n-save hidden>Save</button>
+        <button class="btn" type="button" data-n-test hidden>Send me a test notification</button>
+        <button class="btn" type="button" data-n-off hidden>Unsubscribe and delete my data</button>
+      </div>
+      <p class="meta" data-n-test-note hidden>The test goes to this browser only. It does not use up your daily limit, and you can send one a minute.</p>
+      <p class="meta">Your choices are tied to this browser only. No name, email or reading history is stored.</p>
+    </section>
+  )}
+  {conf.enabled && (
+    <script>
+      import { initNotificationsPage } from '../lib/notifications-page.js';
+      import * as client from '../lib/push-client.js';
+      const root = document.querySelector('[data-notify]') as HTMLElement | null;
+      if (root) initNotificationsPage({ root, cfg: { endpoint: root.dataset.api, vapidPublicKey: root.dataset.key }, client });
+    </script>
+  )}
+</Base>

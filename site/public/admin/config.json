@@ -1,0 +1,11 @@
+{
+  "repo": "Shivam-das-191a/shivam-das-news",
+  "branch": "main",
+  "contentRoot": "site",
+  "authUrl": "https://news-admin-auth.shivamdas2nd700.workers.dev/auth",
+  "siteUrl": "https://shivam-das-news.pages.dev",
+  "imageCopies": false,
+  "roles": {
+    "Shivam-das-191a": "admin"
+  }
+}

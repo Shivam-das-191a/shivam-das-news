@@ -1,0 +1,30 @@
+---
+import site from '../../config/site.json';
+import { getMenuCategories } from '../lib/posts';
+import Icon from './Icon.astro';
+import pushCfg from '../../config/push.json';
+import { pushConfig } from '../lib/push-client.js';
+const push = pushConfig(pushCfg).enabled;
+const cats = await getMenuCategories();
+const styles = [['sunset', '#d94a00'], ['sky', '#2f6bff'], ['mint', '#0b8a55'], ['grape', '#7c3aed']];
+---
+<header class="top card">
+  <a class="brand" href="/"><span class={site.logo ? 'logo img' : 'logo'} aria-hidden="true">{site.logo ? <img src={site.logo} width="38" height="38" alt="" decoding="async" /> : site.siteName[0]}</span><span>{site.siteName}</span></a>
+  <span class="sp"></span>
+  <a class="btn" href="/search/" aria-label="Search"><Icon name="search" size={22} /></a>
+  {push && <a class="btn" href="/notifications/" aria-label="Notifications"><Icon name="bell" size={22} /></a>}
+  <button class="btn" id="mode" type="button" aria-label="Toggle dark mode"><Icon name="contrast" size={22} /></button>
+  <details class="menu-wrap">
+    <summary class="btn" aria-label="Menu"><Icon name="menu-dots" size={24} /></summary>
+    <div class="menu card">
+      <p class="menu-h">Categories</p>
+      <nav aria-label="Categories">
+        {cats.length ? cats.map((c) => <a href={c.url}>{c.name}</a>) : <a href="/">Latest</a>}
+      </nav>
+      <p class="menu-h" id="menu-style">Colour style</p>
+      <span class="dots" role="group" aria-labelledby="menu-style">
+        {styles.map(([s, c]) => <button class="dot" type="button" style={`background:${c}`} data-s={s} aria-label={s}></button>)}
+      </span>
+    </div>
+  </details>
+</header>

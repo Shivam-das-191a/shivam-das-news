@@ -1,0 +1,49 @@
+---
+// v0.48.0: the contact form (PLAN 16; BUGS N6). Used by the Contact page only. Renders nothing with the default config (config/contact.json is empty),
+// so no page changes until the owner sets the Worker address and the Turnstile site key. No ad code, no analytics code, no cookie.
+// The form is hidden until its script runs (no JavaScript, no form: the page text shows the email address).
+import clientSrc from '../lib/contact-client.js?raw';
+import cfg from '../../config/contact.json';
+import { contactPlan } from '../lib/contact';
+import { jsonLdString } from '../lib/schema';
+
+const plan = contactPlan(cfg);
+---
+{plan && (
+  <section class="cform card" aria-labelledby="cf-title" data-pagefind-ignore>
+    <h2 id="cf-title">Send us a message</h2>
+    <noscript><p>The form needs JavaScript. Please write to us by email instead.</p></noscript>
+    <form data-contact hidden novalidate>
+      <label for="cf-name">Your name</label>
+      <input id="cf-name" name="name" type="text" maxlength="100" autocomplete="name" required aria-describedby="cf-name-err" />
+      <span class="cf-err" id="cf-name-err" data-error="name"></span>
+
+      <label for="cf-email">Your email address</label>
+      <input id="cf-email" name="email" type="email" maxlength="120" autocomplete="email" required aria-describedby="cf-email-err" />
+      <span class="cf-err" id="cf-email-err" data-error="email"></span>
+
+      <label for="cf-subject">Subject (optional)</label>
+      <input id="cf-subject" name="subject" type="text" maxlength="150" aria-describedby="cf-subject-err" />
+      <span class="cf-err" id="cf-subject-err" data-error="subject"></span>
+
+      <label for="cf-message">Your message</label>
+      <textarea id="cf-message" name="message" rows="7" maxlength="4000" required aria-describedby="cf-message-err"></textarea>
+      <span class="cf-err" id="cf-message-err" data-error="message"></span>
+
+      <div class="cf-hp" aria-hidden="true">
+        <label for="cf-website">Leave this field empty</label>
+        <input id="cf-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+      </div>
+
+      <div class="cf-turn">
+        <div class="cf-turnstile" data-sitekey={plan.siteKey}></div>
+        <span class="cf-err" data-error="check"></span>
+      </div>
+
+      <button class="btn cf-send" type="submit">Send message</button>
+      <p class="cf-status" data-status role="status" aria-live="polite"></p>
+    </form>
+    <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <script is:inline data-contact-client set:html={`${clientSrc}\ncontactClient(window, ${jsonLdString({ endpoint: plan.endpoint })});`}></script>
+  </section>
+)}

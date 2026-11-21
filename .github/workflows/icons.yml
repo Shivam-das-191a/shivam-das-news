@@ -1,0 +1,26 @@
+name: Make icons
+# When the logo (site/brand/source-icon.png) changes, rebuild every icon and commit them.
+on:
+  push:
+    branches: [main]
+    paths: ["site/brand/source-icon.png"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: { group: icons, cancel-in-progress: false }
+jobs:
+  icons:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: site } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: site/package-lock.json }
+      - run: npm ci
+      - run: npm run icons
+      - name: Commit icons
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public
+          git diff --cached --quiet || (git commit -m "chore: regenerate icons from logo" && git push)
